@@ -27,6 +27,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
     _loadLevel();
   }
 
+  @override
+  void didUpdateWidget(CategoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // レベルIDが変更された場合に再読み込み
+    if (oldWidget.levelId != widget.levelId) {
+      setState(() {
+        _isLoading = true;
+      });
+      _loadLevel();
+    }
+  }
+
   Future<void> _loadLevel() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final level = await appProvider.getLevel(widget.levelId);
@@ -147,17 +159,20 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Widget _buildLevelInfo() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return InkWell(
+      onTap: _showLevelSelector,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue[200]!),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Container(
@@ -234,10 +249,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   color: Colors.blue[600],
                 ),
               ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.swap_horiz,
+                color: Colors.blue[600],
+                size: 20,
+              ),
             ],
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -363,6 +385,164 @@ class _CategoryScreenState extends State<CategoryScreen> {
     
     
     context.go('${AppRouter.study}?levelId=${widget.levelId}&mixed=true');
+  }
+
+  void _showLevelSelector() {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Icon(Icons.swap_horiz, color: Colors.blue[600]),
+                const SizedBox(width: 8),
+                const Text(
+                  'レベルを選択',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: appProvider.levels.length,
+                itemBuilder: (context, index) {
+                  final level = appProvider.levels[index];
+                  final isCurrentLevel = level.id == widget.levelId;
+                  
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: isCurrentLevel ? 4 : 2,
+                    color: isCurrentLevel ? Colors.blue[50] : null,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isCurrentLevel 
+                        ? BorderSide(color: Colors.blue[300]!, width: 2)
+                        : BorderSide.none,
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isCurrentLevel ? Colors.blue[600] : _getLevelColor(level.order),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            level.order.toString(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              level.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isCurrentLevel ? Colors.blue[700] : null,
+                              ),
+                            ),
+                          ),
+                          if (isCurrentLevel)
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.blue[600],
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(level.description),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: LinearProgressIndicator(
+                                  value: level.progress,
+                                  backgroundColor: Colors.grey[200],
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    isCurrentLevel ? Colors.blue[600]! : _getLevelColor(level.order),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${(level.progress * 100).toInt()}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isCurrentLevel ? Colors.blue[600] : _getLevelColor(level.order),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      onTap: isCurrentLevel ? null : () {
+                        Navigator.pop(context);
+                        context.go('${AppRouter.category}?levelId=${level.id}');
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getLevelColor(int order) {
+    switch (order) {
+      case 1:
+        return Colors.green;
+      case 2:
+        return Colors.blue;
+      case 3:
+        return Colors.orange;
+      case 4:
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildDrawer(BuildContext context) {

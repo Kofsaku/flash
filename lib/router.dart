@@ -83,8 +83,12 @@ class AppRouter {
         ),
         ShellRoute(
           builder: (context, state, child) {
+            final location = state.fullPath ?? state.matchedLocation;
+            final uri = state.uri.toString();
+            final queryParams = state.uri.queryParameters;
+            print('Debug: Full path = ${state.fullPath}, Matched location = ${state.matchedLocation}, URI = $uri, Query params = $queryParams');
             return MainLayout(
-              currentIndex: _getCurrentIndex(state.matchedLocation),
+              currentIndex: _getCurrentIndex(location, queryParams),
               child: child,
             );
           },
@@ -92,7 +96,10 @@ class AppRouter {
             GoRoute(
               path: home,
               name: 'home',
-              builder: (context, state) => const HomeScreen(),
+              builder: (context, state) {
+                print('Debug: Home route built with query params: ${state.uri.queryParameters}');
+                return const HomeScreen();
+              },
             ),
             GoRoute(
               path: favorites,
@@ -120,23 +127,23 @@ class AppRouter {
                 return ExampleListScreen(categoryId: categoryId);
               },
             ),
+            GoRoute(
+              path: study,
+              name: 'study',
+              builder: (context, state) {
+                final categoryId = state.uri.queryParameters['categoryId'] ?? '';
+                final levelId = state.uri.queryParameters['levelId'] ?? '';
+                final mixed = state.uri.queryParameters['mixed'] == 'true';
+                final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
+                
+                if (mixed && levelId.isNotEmpty) {
+                  return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
+                } else {
+                  return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
+                }
+              },
+            ),
           ],
-        ),
-        GoRoute(
-          path: study,
-          name: 'study',
-          builder: (context, state) {
-            final categoryId = state.uri.queryParameters['categoryId'] ?? '';
-            final levelId = state.uri.queryParameters['levelId'] ?? '';
-            final mixed = state.uri.queryParameters['mixed'] == 'true';
-            final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
-            
-            if (mixed && levelId.isNotEmpty) {
-              return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
-            } else {
-              return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
-            }
-          },
         ),
         GoRoute(
           path: error,
@@ -183,14 +190,24 @@ class AppRouter {
     );
   }
 
-  static int _getCurrentIndex(String location) {
+  static int _getCurrentIndex(String location, Map<String, String> queryParams) {
+    print('Debug: Current location = $location, Query params = $queryParams'); // デバッグ用
+    
     // 学習タブからのホーム遷移の場合
-    if (location.contains('tab=study')) return 1;
-    if (location.startsWith(home)) return 0;
+    if (queryParams['tab'] == 'study') {
+      print('Debug: Study tab detected via query param, returning index 1');
+      return 1;
+    }
+    // カテゴリー、例文一覧、学習画面は学習タブ
     if (location.startsWith(category)) return 1;
     if (location.startsWith(exampleList)) return 1;
+    if (location.startsWith(study)) return 1;
+    // その他のページ
+    if (location.startsWith(home)) return 0;
     if (location.startsWith(favorites)) return 2;
     if (location.startsWith(profile)) return 3;
+    
+    print('Debug: Returning default index 0');
     return 0; // Default to home
   }
 }

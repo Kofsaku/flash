@@ -46,18 +46,22 @@ class MainLayout extends StatelessWidget {
   }
 
   void _onTabTapped(BuildContext context, int index) {
+    print('Debug: Tab tapped, index = $index');
     switch (index) {
       case 0:
+        print('Debug: Navigating to home');
         context.go(AppRouter.home);
         break;
       case 1:
-        // 学習タブとして識別するためのパラメータ付きでホームに遷移
+        print('Debug: Navigating to home with tab=study');
         context.go('${AppRouter.home}?tab=study');
         break;
       case 2:
+        print('Debug: Navigating to favorites');
         context.go(AppRouter.favorites);
         break;
       case 3:
+        print('Debug: Navigating to profile');
         context.go(AppRouter.profile);
         break;
     }
