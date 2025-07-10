@@ -73,6 +73,12 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         actions: [
+          if (_examples.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.shuffle),
+              onPressed: _shuffleExamples,
+              tooltip: 'シャッフル',
+            ),
           if (_levelId != null)
             IconButton(
               icon: const Icon(Icons.list_alt),
@@ -84,12 +90,6 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
             onPressed: () => context.go(AppRouter.home),
             tooltip: 'ホームに戻る',
           ),
-          if (_examples.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.shuffle),
-              onPressed: _shuffleExamples,
-              tooltip: 'シャッフル',
-            ),
         ],
       ),
       body: _isLoading

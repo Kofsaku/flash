@@ -94,12 +94,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
           children: [
             _buildLevelInfo(),
             const SizedBox(height: 24),
-            const Text(
-              'カテゴリーを選択',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'カテゴリーを選択',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _startMixedStudy,
+                  icon: const Icon(Icons.shuffle, size: 18),
+                  label: const Text('全ミックス'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -333,5 +348,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
         ),
       ),
     );
+  }
+
+  void _startMixedStudy() {
+    if (_level == null) return;
+    
+    print('Starting mixed study for levelId: ${widget.levelId}');
+    print('Level name: ${_level!.name}');
+    print('Categories count: ${_level!.categories.length}');
+    
+    context.go('${AppRouter.study}?levelId=${widget.levelId}&mixed=true');
   }
 }

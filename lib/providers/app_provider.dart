@@ -121,6 +121,26 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  Future<List<Example>> getMixedExamples(String levelId) async {
+    try {
+      final level = await getLevel(levelId);
+      if (level == null) return [];
+      
+      List<Example> allExamples = [];
+      
+      for (final category in level.categories) {
+        allExamples.addAll(category.examples);
+      }
+      
+      allExamples.shuffle();
+      return allExamples;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return [];
+    }
+  }
+
   Future<void> updateExampleCompletion(String exampleId, bool isCompleted) async {
     try {
       await _mockDataService.updateExampleCompletion(exampleId, isCompleted);

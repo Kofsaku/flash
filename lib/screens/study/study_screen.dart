@@ -7,13 +7,21 @@ import '../../router.dart';
 
 class StudyScreen extends StatefulWidget {
   final String categoryId;
+  final String? levelId;
   final int initialIndex;
+  final bool isMixed;
 
   const StudyScreen({
     super.key,
     required this.categoryId,
     this.initialIndex = 0,
-  });
+  }) : levelId = null, isMixed = false;
+
+  const StudyScreen.mixed({
+    super.key,
+    required String levelId,
+    this.initialIndex = 0,
+  }) : categoryId = '', levelId = levelId, isMixed = true;
 
   @override
   State<StudyScreen> createState() => _StudyScreenState();
@@ -45,15 +53,66 @@ class _StudyScreenState extends State<StudyScreen> {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     
     try {
-      final category = await appProvider.getCategory(widget.categoryId);
-      final examples = await appProvider.getExamples(widget.categoryId);
-      
-      if (mounted) {
-        setState(() {
-          _category = category;
-          _examples = examples;
-          _isLoading = false;
-        });
+      if (widget.isMixed && widget.levelId != null) {
+        // Mixed study mode - get all examples from the level
+        print('Mixed study mode: Loading level ${widget.levelId}');
+        
+        // Ensure levels are loaded
+        if (appProvider.levels.isEmpty) {
+          print('Levels not loaded, loading them first...');
+          await appProvider.loadLevels();
+        }
+        
+        print('Available levels: ${appProvider.levels.map((l) => '${l.id}: ${l.name}').toList()}');
+        final level = await appProvider.getLevel(widget.levelId!);
+        print('Level result: $level');
+        if (level == null) {
+          print('Level not found for ID: ${widget.levelId}');
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+        
+        List<Example> allExamples = [];
+        
+        for (final category in level.categories) {
+          allExamples.addAll(category.examples);
+        }
+        
+        // Shuffle the examples for random order
+        allExamples.shuffle();
+        
+        if (mounted) {
+          setState(() {
+            _category = Category(
+              id: 'mixed_${widget.levelId}',
+              name: '${level.name} - 全ミックス',
+              description: '全カテゴリーからランダム出題',
+              levelId: widget.levelId!,
+              order: 0,
+              examples: allExamples,
+              totalExamples: allExamples.length,
+              completedExamples: 0,
+            );
+            _examples = allExamples;
+            _isLoading = false;
+          });
+        }
+      } else {
+        // Normal study mode - single category
+        final category = await appProvider.getCategory(widget.categoryId);
+        final examples = await appProvider.getExamples(widget.categoryId);
+        
+        if (mounted) {
+          setState(() {
+            _category = category;
+            _examples = examples;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -72,11 +131,6 @@ class _StudyScreenState extends State<StudyScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.list),
-            onPressed: _goToExampleList,
-            tooltip: 'セクション選択に戻る',
-          ),
           if (_examples.isNotEmpty)
             IconButton(
               icon: Icon(
@@ -87,6 +141,11 @@ class _StudyScreenState extends State<StudyScreen> {
               onPressed: _toggleFavorite,
               tooltip: 'お気に入り',
             ),
+          IconButton(
+            icon: const Icon(Icons.list),
+            onPressed: _goToExampleList,
+            tooltip: 'セクション選択に戻る',
+          ),
         ],
       ),
       body: _isLoading
@@ -331,41 +390,44 @@ class _StudyScreenState extends State<StudyScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          if (_showEnglish) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _markAsCompleted(false),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.red[400]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+          SizedBox(
+            height: 48, // Fixed height to prevent layout shift
+            child: _showEnglish
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _markAsCompleted(false),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.red[400]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'まだ覚えていない',
+                            style: TextStyle(color: Colors.red[600]),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      'まだ覚えていない',
-                      style: TextStyle(color: Colors.red[600]),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _markAsCompleted(true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[600],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _markAsCompleted(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green[600],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('覚えた！'),
+                        ),
                       ),
-                    ),
-                    child: const Text('覚えた！'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                    ],
+                  )
+                : const SizedBox.shrink(), // Empty space when not showing
+          ),
         ],
       ),
     );
@@ -486,8 +548,10 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('セクション選択に戻る'),
-        content: const Text('学習を中断してセクション選択画面に戻りますか？'),
+        title: Text(widget.isMixed ? 'カテゴリー選択に戻る' : 'セクション選択に戻る'),
+        content: Text(widget.isMixed 
+          ? '学習を中断してカテゴリー選択画面に戻りますか？' 
+          : '学習を中断してセクション選択画面に戻りますか？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -496,7 +560,11 @@ class _StudyScreenState extends State<StudyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.go('${AppRouter.exampleList}?categoryId=${widget.categoryId}');
+              if (widget.isMixed && widget.levelId != null) {
+                context.go('${AppRouter.category}?levelId=${widget.levelId}');
+              } else {
+                context.go('${AppRouter.exampleList}?categoryId=${widget.categoryId}');
+              }
             },
             child: const Text('戻る'),
           ),
@@ -519,7 +587,11 @@ class _StudyScreenState extends State<StudyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.go('${AppRouter.exampleList}?categoryId=${widget.categoryId}');
+              if (widget.isMixed && widget.levelId != null) {
+                context.go('${AppRouter.category}?levelId=${widget.levelId}');
+              } else {
+                context.go('${AppRouter.exampleList}?categoryId=${widget.categoryId}');
+              }
             },
             child: const Text('終了'),
           ),

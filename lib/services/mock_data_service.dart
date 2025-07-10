@@ -15,6 +15,10 @@ class MockDataService {
   Future<void> initialize() async {
     await Future.delayed(const Duration(milliseconds: 500));
     _initializeLevels();
+    print('MockDataService initialized with ${_levels.length} levels');
+    for (final level in _levels) {
+      print('Level ${level.id}: ${level.categories.length} categories');
+    }
   }
 
   Future<User> login(String email, String password) async {
@@ -56,9 +60,15 @@ class MockDataService {
     return _levels;
   }
 
-  Future<Level> getLevel(String levelId) async {
+  Future<Level?> getLevel(String levelId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    return _levels.firstWhere((level) => level.id == levelId);
+    try {
+      return _levels.firstWhere((level) => level.id == levelId);
+    } catch (e) {
+      print('Level not found in MockDataService: $levelId');
+      print('Available levels: ${_levels.map((l) => l.id).toList()}');
+      return null;
+    }
   }
 
   Future<Category> getCategory(String categoryId) async {
@@ -314,8 +324,161 @@ class MockDataService {
             totalExamples: 10,
             completedExamples: 0,
           ),
+          Category(
+            id: 'past_tense',
+            name: '過去形',
+            description: '過去形の基本的な使い方',
+            levelId: 'junior_high',
+            order: 3,
+            examples: [
+              Example(
+                id: 'pt_001',
+                categoryId: 'past_tense',
+                levelId: 'junior_high',
+                japanese: '私は昨日映画を見ました。',
+                english: 'I watched a movie yesterday.',
+                order: 1,
+              ),
+              Example(
+                id: 'pt_002',
+                categoryId: 'past_tense',
+                levelId: 'junior_high',
+                japanese: '彼は去年日本に来ました。',
+                english: 'He came to Japan last year.',
+                order: 2,
+              ),
+              Example(
+                id: 'pt_003',
+                categoryId: 'past_tense',
+                levelId: 'junior_high',
+                japanese: 'あなたは何時に起きましたか？',
+                english: 'What time did you get up?',
+                order: 3,
+              ),
+              Example(
+                id: 'pt_004',
+                categoryId: 'past_tense',
+                levelId: 'junior_high',
+                japanese: '私たちは公園で遊びました。',
+                english: 'We played in the park.',
+                order: 4,
+              ),
+              Example(
+                id: 'pt_005',
+                categoryId: 'past_tense',
+                levelId: 'junior_high',
+                japanese: '彼女は宿題をしませんでした。',
+                english: 'She did not do her homework.',
+                order: 5,
+              ),
+            ],
+            totalExamples: 5,
+            completedExamples: 0,
+          ),
+          Category(
+            id: 'future_tense',
+            name: '未来形',
+            description: 'will/be going toの使い方',
+            levelId: 'junior_high',
+            order: 4,
+            examples: [
+              Example(
+                id: 'ft_001',
+                categoryId: 'future_tense',
+                levelId: 'junior_high',
+                japanese: '明日雨が降るでしょう。',
+                english: 'It will rain tomorrow.',
+                order: 1,
+              ),
+              Example(
+                id: 'ft_002',
+                categoryId: 'future_tense',
+                levelId: 'junior_high',
+                japanese: '私は来週友達に会う予定です。',
+                english: 'I am going to meet my friend next week.',
+                order: 2,
+              ),
+              Example(
+                id: 'ft_003',
+                categoryId: 'future_tense',
+                levelId: 'junior_high',
+                japanese: 'あなたは何をするつもりですか？',
+                english: 'What are you going to do?',
+                order: 3,
+              ),
+              Example(
+                id: 'ft_004',
+                categoryId: 'future_tense',
+                levelId: 'junior_high',
+                japanese: '彼は医者になるでしょう。',
+                english: 'He will become a doctor.',
+                order: 4,
+              ),
+              Example(
+                id: 'ft_005',
+                categoryId: 'future_tense',
+                levelId: 'junior_high',
+                japanese: '私たちは旅行に行く予定です。',
+                english: 'We are going to travel.',
+                order: 5,
+              ),
+            ],
+            totalExamples: 5,
+            completedExamples: 0,
+          ),
+          Category(
+            id: 'question_words',
+            name: '疑問詞',
+            description: 'what, where, when, why, howの使い方',
+            levelId: 'junior_high',
+            order: 5,
+            examples: [
+              Example(
+                id: 'qw_001',
+                categoryId: 'question_words',
+                levelId: 'junior_high',
+                japanese: 'これは何ですか？',
+                english: 'What is this?',
+                order: 1,
+              ),
+              Example(
+                id: 'qw_002',
+                categoryId: 'question_words',
+                levelId: 'junior_high',
+                japanese: 'あなたはどこに住んでいますか？',
+                english: 'Where do you live?',
+                order: 2,
+              ),
+              Example(
+                id: 'qw_003',
+                categoryId: 'question_words',
+                levelId: 'junior_high',
+                japanese: 'いつ学校が始まりますか？',
+                english: 'When does school start?',
+                order: 3,
+              ),
+              Example(
+                id: 'qw_004',
+                categoryId: 'question_words',
+                levelId: 'junior_high',
+                japanese: 'なぜ遅れたのですか？',
+                english: 'Why were you late?',
+                order: 4,
+              ),
+              Example(
+                id: 'qw_005',
+                categoryId: 'question_words',
+                levelId: 'junior_high',
+                japanese: 'どうやって駅に行きますか？',
+                english: 'How do you go to the station?',
+                order: 5,
+              ),
+            ],
+            totalExamples: 5,
+            completedExamples: 0,
+          ),
         ],
-        totalExamples: 20,
+        totalExamples: 35,
         completedExamples: 0,
       ),
       Level(
@@ -415,8 +578,161 @@ class MockDataService {
             totalExamples: 10,
             completedExamples: 0,
           ),
+          Category(
+            id: 'infinitive',
+            name: '不定詞',
+            description: 'to不定詞の様々な用法',
+            levelId: 'high_school_1',
+            order: 2,
+            examples: [
+              Example(
+                id: 'inf_001',
+                categoryId: 'infinitive',
+                levelId: 'high_school_1',
+                japanese: '私は英語を勉強したいです。',
+                english: 'I want to study English.',
+                order: 1,
+              ),
+              Example(
+                id: 'inf_002',
+                categoryId: 'infinitive',
+                levelId: 'high_school_1',
+                japanese: '彼は医者になることを決めました。',
+                english: 'He decided to become a doctor.',
+                order: 2,
+              ),
+              Example(
+                id: 'inf_003',
+                categoryId: 'infinitive',
+                levelId: 'high_school_1',
+                japanese: '私の夢は世界を旅行することです。',
+                english: 'My dream is to travel around the world.',
+                order: 3,
+              ),
+              Example(
+                id: 'inf_004',
+                categoryId: 'infinitive',
+                levelId: 'high_school_1',
+                japanese: '彼女は歌うために生まれてきました。',
+                english: 'She was born to sing.',
+                order: 4,
+              ),
+              Example(
+                id: 'inf_005',
+                categoryId: 'infinitive',
+                levelId: 'high_school_1',
+                japanese: '私はあなたに会えて嬉しいです。',
+                english: 'I am happy to meet you.',
+                order: 5,
+              ),
+            ],
+            totalExamples: 5,
+            completedExamples: 0,
+          ),
+          Category(
+            id: 'gerund',
+            name: '動名詞',
+            description: '動名詞の基本的な使い方',
+            levelId: 'high_school_1',
+            order: 3,
+            examples: [
+              Example(
+                id: 'ger_001',
+                categoryId: 'gerund',
+                levelId: 'high_school_1',
+                japanese: '私は読書が好きです。',
+                english: 'I like reading.',
+                order: 1,
+              ),
+              Example(
+                id: 'ger_002',
+                categoryId: 'gerund',
+                levelId: 'high_school_1',
+                japanese: '彼は泳ぐのが得意です。',
+                english: 'He is good at swimming.',
+                order: 2,
+              ),
+              Example(
+                id: 'ger_003',
+                categoryId: 'gerund',
+                levelId: 'high_school_1',
+                japanese: '喫煙は健康に悪いです。',
+                english: 'Smoking is bad for your health.',
+                order: 3,
+              ),
+              Example(
+                id: 'ger_004',
+                categoryId: 'gerund',
+                levelId: 'high_school_1',
+                japanese: '彼女は歌うことをやめました。',
+                english: 'She stopped singing.',
+                order: 4,
+              ),
+              Example(
+                id: 'ger_005',
+                categoryId: 'gerund',
+                levelId: 'high_school_1',
+                japanese: '私は早起きに慣れています。',
+                english: 'I am used to getting up early.',
+                order: 5,
+              ),
+            ],
+            totalExamples: 5,
+            completedExamples: 0,
+          ),
+          Category(
+            id: 'relative_pronoun',
+            name: '関係代名詞',
+            description: 'who, which, thatの使い方',
+            levelId: 'high_school_1',
+            order: 4,
+            examples: [
+              Example(
+                id: 'rp_001',
+                categoryId: 'relative_pronoun',
+                levelId: 'high_school_1',
+                japanese: '彼は英語を教える先生です。',
+                english: 'He is a teacher who teaches English.',
+                order: 1,
+              ),
+              Example(
+                id: 'rp_002',
+                categoryId: 'relative_pronoun',
+                levelId: 'high_school_1',
+                japanese: 'これは私が昨日買った本です。',
+                english: 'This is the book that I bought yesterday.',
+                order: 2,
+              ),
+              Example(
+                id: 'rp_003',
+                categoryId: 'relative_pronoun',
+                levelId: 'high_school_1',
+                japanese: '私は犬が好きな女の子を知っています。',
+                english: 'I know a girl who likes dogs.',
+                order: 3,
+              ),
+              Example(
+                id: 'rp_004',
+                categoryId: 'relative_pronoun',
+                levelId: 'high_school_1',
+                japanese: 'あれは壊れた車です。',
+                english: 'That is a car which is broken.',
+                order: 4,
+              ),
+              Example(
+                id: 'rp_005',
+                categoryId: 'relative_pronoun',
+                levelId: 'high_school_1',
+                japanese: '彼女は私が話していた人です。',
+                english: 'She is the person whom I was talking about.',
+                order: 5,
+              ),
+            ],
+            totalExamples: 5,
+            completedExamples: 0,
+          ),
         ],
-        totalExamples: 10,
+        totalExamples: 25,
         completedExamples: 0,
       ),
       Level(

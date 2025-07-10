@@ -102,8 +102,19 @@ class AppRouter {
           name: 'study',
           builder: (context, state) {
             final categoryId = state.uri.queryParameters['categoryId'] ?? '';
+            final levelId = state.uri.queryParameters['levelId'] ?? '';
+            final mixed = state.uri.queryParameters['mixed'] == 'true';
             final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
-            return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
+            
+            print('Router: categoryId=$categoryId, levelId=$levelId, mixed=$mixed');
+            
+            if (mixed && levelId.isNotEmpty) {
+              print('Creating mixed StudyScreen with levelId: $levelId');
+              return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
+            } else {
+              print('Creating normal StudyScreen with categoryId: $categoryId');
+              return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
+            }
           },
         ),
         GoRoute(
