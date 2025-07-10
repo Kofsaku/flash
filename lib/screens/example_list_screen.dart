@@ -72,6 +72,13 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
         title: Text(_category?.name ?? '例文一覧'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'メニュー',
+          ),
+        ),
         actions: [
           if (_examples.isNotEmpty)
             IconButton(
@@ -92,6 +99,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
           ),
         ],
       ),
+      drawer: _buildDrawer(context),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _category == null
@@ -348,5 +356,89 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
 
   void _startStudy(int startIndex) {
     context.go('${AppRouter.study}?categoryId=${widget.categoryId}&index=$startIndex');
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          Consumer<AppProvider>(
+            builder: (context, appProvider, child) {
+              final user = appProvider.currentUser;
+              return UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.blue[600]!, Colors.blue[400]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                accountName: Text(
+                  user?.name ?? 'ゲストユーザー',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                accountEmail: Text(
+                  user?.email ?? 'guest@example.com',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.blue[600],
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('ホーム'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRouter.home);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('マイページ'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRouter.profile);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.favorite),
+            title: const Text('お気に入り'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRouter.favorites);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('設定'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Settings functionality
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.help),
+            title: const Text('ヘルプ'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Help functionality
+            },
+          ),
+        ],
+      ),
+    );
   }
 }

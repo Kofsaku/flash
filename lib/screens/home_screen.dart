@@ -28,15 +28,22 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('瞬間英作文'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'メニュー',
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              _showSettingsDialog(context);
-            },
+            icon: const Icon(Icons.search),
+            onPressed: _showSearchDialog,
+            tooltip: '検索',
           ),
         ],
       ),
+      drawer: _buildDrawer(context),
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           if (appProvider.isLoading) {
@@ -157,6 +164,190 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          Consumer<AppProvider>(
+            builder: (context, appProvider, child) {
+              final user = appProvider.currentUser;
+              return UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.blue[600]!, Colors.blue[400]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                accountName: Text(
+                  user?.name ?? 'ゲストユーザー',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                accountEmail: Text(
+                  user?.email ?? 'guest@example.com',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.blue[600],
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('ホーム'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRouter.home);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('マイページ'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRouter.profile);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.favorite),
+            title: const Text('お気に入り'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRouter.favorites);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.search),
+            title: const Text('検索'),
+            onTap: () {
+              Navigator.pop(context);
+              _showSearchDialog();
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('設定'),
+            onTap: () {
+              Navigator.pop(context);
+              _showSettingsDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.help),
+            title: const Text('ヘルプ'),
+            onTap: () {
+              Navigator.pop(context);
+              _showHelpDialog(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('ログアウト'),
+            onTap: () async {
+              Navigator.pop(context);
+              final appProvider = Provider.of<AppProvider>(context, listen: false);
+              await appProvider.logout();
+              if (context.mounted) {
+                context.go(AppRouter.login);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('検索'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                hintText: '例文やカテゴリーを検索...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // TODO: 検索機能の実装
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('検索機能は今後実装予定です')),
+              );
+            },
+            child: const Text('検索'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ヘルプ'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '使い方',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text('1. レベルを選択してください'),
+              Text('2. 学習したいカテゴリーを選択してください'),
+              Text('3. 例文をタップして学習を開始してください'),
+              Text('4. 日本語を見て英語に翻訳してください'),
+              Text('5. 「覚えた！」ボタンで進捗を管理してください'),
+              SizedBox(height: 16),
+              Text(
+                '機能',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text('• お気に入り機能で重要な例文を保存'),
+              Text('• 全ミックス機能でランダム学習'),
+              Text('• 進捗管理で学習状況を把握'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('閉じる'),
           ),
         ],
       ),

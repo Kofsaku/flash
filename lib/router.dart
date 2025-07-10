@@ -16,6 +16,9 @@ import 'screens/category_screen.dart';
 import 'screens/example_list_screen.dart';
 import 'screens/study/study_screen.dart';
 import 'screens/error_screen.dart';
+import 'screens/favorites_screen.dart';
+import 'screens/profile_screen.dart';
+import 'widgets/main_layout.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -30,6 +33,8 @@ class AppRouter {
   static const String category = '/category';
   static const String exampleList = '/examples';
   static const String study = '/study';
+  static const String favorites = '/favorites';
+  static const String profile = '/profile';
   static const String error = '/error';
 
   static GoRouter createRouter() {
@@ -76,26 +81,46 @@ class AppRouter {
           name: 'loading',
           builder: (context, state) => const LoadingScreen(),
         ),
-        GoRoute(
-          path: home,
-          name: 'home',
-          builder: (context, state) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: category,
-          name: 'category',
-          builder: (context, state) {
-            final levelId = state.uri.queryParameters['levelId'] ?? '';
-            return CategoryScreen(levelId: levelId);
+        ShellRoute(
+          builder: (context, state, child) {
+            return MainLayout(
+              currentIndex: _getCurrentIndex(state.matchedLocation),
+              child: child,
+            );
           },
-        ),
-        GoRoute(
-          path: exampleList,
-          name: 'exampleList',
-          builder: (context, state) {
-            final categoryId = state.uri.queryParameters['categoryId'] ?? '';
-            return ExampleListScreen(categoryId: categoryId);
-          },
+          routes: [
+            GoRoute(
+              path: home,
+              name: 'home',
+              builder: (context, state) => const HomeScreen(),
+            ),
+            GoRoute(
+              path: favorites,
+              name: 'favorites',
+              builder: (context, state) => const FavoritesScreen(),
+            ),
+            GoRoute(
+              path: profile,
+              name: 'profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
+            GoRoute(
+              path: category,
+              name: 'category',
+              builder: (context, state) {
+                final levelId = state.uri.queryParameters['levelId'] ?? '';
+                return CategoryScreen(levelId: levelId);
+              },
+            ),
+            GoRoute(
+              path: exampleList,
+              name: 'exampleList',
+              builder: (context, state) {
+                final categoryId = state.uri.queryParameters['categoryId'] ?? '';
+                return ExampleListScreen(categoryId: categoryId);
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: study,
@@ -106,13 +131,9 @@ class AppRouter {
             final mixed = state.uri.queryParameters['mixed'] == 'true';
             final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
             
-            print('Router: categoryId=$categoryId, levelId=$levelId, mixed=$mixed');
-            
             if (mixed && levelId.isNotEmpty) {
-              print('Creating mixed StudyScreen with levelId: $levelId');
               return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
             } else {
-              print('Creating normal StudyScreen with categoryId: $categoryId');
               return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
             }
           },
@@ -160,5 +181,16 @@ class AppRouter {
         return null;
       },
     );
+  }
+
+  static int _getCurrentIndex(String location) {
+    // 学習タブからのホーム遷移の場合
+    if (location.contains('tab=study')) return 1;
+    if (location.startsWith(home)) return 0;
+    if (location.startsWith(category)) return 1;
+    if (location.startsWith(exampleList)) return 1;
+    if (location.startsWith(favorites)) return 2;
+    if (location.startsWith(profile)) return 3;
+    return 0; // Default to home
   }
 }

@@ -15,10 +15,6 @@ class MockDataService {
   Future<void> initialize() async {
     await Future.delayed(const Duration(milliseconds: 500));
     _initializeLevels();
-    print('MockDataService initialized with ${_levels.length} levels');
-    for (final level in _levels) {
-      print('Level ${level.id}: ${level.categories.length} categories');
-    }
   }
 
   Future<User> login(String email, String password) async {
@@ -65,8 +61,6 @@ class MockDataService {
     try {
       return _levels.firstWhere((level) => level.id == levelId);
     } catch (e) {
-      print('Level not found in MockDataService: $levelId');
-      print('Available levels: ${_levels.map((l) => l.id).toList()}');
       return null;
     }
   }
