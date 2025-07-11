@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
+import 'models/user.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/auth/register_profile_screen.dart';
 import 'screens/profile/profile_step1_screen.dart';
 import 'screens/profile/profile_step2_screen.dart';
 import 'screens/profile/profile_step3_screen.dart';
 import 'screens/profile/profile_step4_screen.dart';
+import 'screens/profile/profile_step5_screen.dart';
+import 'screens/profile/quick_start_screen.dart';
 import 'screens/loading_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/category_screen.dart';
@@ -18,16 +22,20 @@ import 'screens/study/study_screen.dart';
 import 'screens/error_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/category_management_screen.dart';
 import 'widgets/main_layout.dart';
 
 class AppRouter {
   static const String splash = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String registerProfile = '/register/profile-setup';
   static const String profileStep1 = '/profile/step1';
   static const String profileStep2 = '/profile/step2';
   static const String profileStep3 = '/profile/step3';
   static const String profileStep4 = '/profile/step4';
+  static const String profileStep5 = '/profile/step5';
+  static const String quickStart = '/profile/quick-start';
   static const String loading = '/loading';
   static const String home = '/home';
   static const String category = '/category';
@@ -35,6 +43,7 @@ class AppRouter {
   static const String study = '/study';
   static const String favorites = '/favorites';
   static const String profile = '/profile';
+  static const String categoryManagement = '/category-management';
   static const String error = '/error';
 
   static GoRouter createRouter() {
@@ -57,6 +66,11 @@ class AppRouter {
           builder: (context, state) => const RegisterScreen(),
         ),
         GoRoute(
+          path: registerProfile,
+          name: 'registerProfile',
+          builder: (context, state) => const RegisterProfileScreen(),
+        ),
+        GoRoute(
           path: profileStep1,
           name: 'profileStep1',
           builder: (context, state) => const ProfileStep1Screen(),
@@ -75,6 +89,16 @@ class AppRouter {
           path: profileStep4,
           name: 'profileStep4',
           builder: (context, state) => const ProfileStep4Screen(),
+        ),
+        GoRoute(
+          path: profileStep5,
+          name: 'profileStep5',
+          builder: (context, state) => const ProfileStep5Screen(),
+        ),
+        GoRoute(
+          path: quickStart,
+          name: 'quickStart',
+          builder: (context, state) => const QuickStartScreen(),
         ),
         GoRoute(
           path: loading,
@@ -112,6 +136,11 @@ class AppRouter {
               builder: (context, state) => const ProfileScreen(),
             ),
             GoRoute(
+              path: categoryManagement,
+              name: 'categoryManagement',
+              builder: (context, state) => const CategoryManagementScreen(),
+            ),
+            GoRoute(
               path: category,
               name: 'category',
               builder: (context, state) {
@@ -127,23 +156,26 @@ class AppRouter {
                 return ExampleListScreen(categoryId: categoryId);
               },
             ),
-            GoRoute(
-              path: study,
-              name: 'study',
-              builder: (context, state) {
-                final categoryId = state.uri.queryParameters['categoryId'] ?? '';
-                final levelId = state.uri.queryParameters['levelId'] ?? '';
-                final mixed = state.uri.queryParameters['mixed'] == 'true';
-                final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
-                
-                if (mixed && levelId.isNotEmpty) {
-                  return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
-                } else {
-                  return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
-                }
-              },
-            ),
           ],
+        ),
+        GoRoute(
+          path: study,
+          name: 'study',
+          builder: (context, state) {
+            final categoryId = state.uri.queryParameters['categoryId'] ?? '';
+            final levelId = state.uri.queryParameters['levelId'] ?? '';
+            final mixed = state.uri.queryParameters['mixed'] == 'true';
+            final allLevels = state.uri.queryParameters['allLevels'] == 'true';
+            final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
+            
+            if (allLevels) {
+              return StudyScreen.allLevels(initialIndex: exampleIndex);
+            } else if (mixed && levelId.isNotEmpty) {
+              return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
+            } else {
+              return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
+            }
+          },
         ),
         GoRoute(
           path: error,
@@ -157,10 +189,16 @@ class AppRouter {
       redirect: (BuildContext context, GoRouterState state) {
         final appProvider = Provider.of<AppProvider>(context, listen: false);
         final isAuthenticated = appProvider.isAuthenticated;
-        final hasProfile = appProvider.currentUser?.profile != null;
+        final profile = appProvider.currentUser?.profile;
+        final hasValidProfile = _hasValidProfile(profile);
         
-        final isOnAuthPages = [login, register].contains(state.matchedLocation);
-        final isOnProfilePages = [profileStep1, profileStep2, profileStep3, profileStep4].contains(state.matchedLocation);
+        print('Router: isAuthenticated = $isAuthenticated, hasValidProfile = $hasValidProfile');
+        if (profile != null) {
+          print('Router: Profile ageGroup = ${profile.ageGroup}, industry = ${profile.industry}');
+        }
+        
+        final isOnAuthPages = [login, register, registerProfile].contains(state.matchedLocation);
+        final isOnProfilePages = [profileStep1, profileStep2, profileStep3, profileStep4, profileStep5, quickStart].contains(state.matchedLocation);
         final isOnSplash = state.matchedLocation == splash;
         final isOnLoading = state.matchedLocation == loading;
         final isOnError = state.matchedLocation == error;
@@ -177,17 +215,37 @@ class AppRouter {
           return login;
         }
 
-        if (isAuthenticated && !hasProfile && !isOnProfilePages && !isOnLoading) {
-          return profileStep1;
-        }
+        // Only redirect to profile setup during registration flow
+        // Existing users should go directly to home
 
-        if (isAuthenticated && hasProfile && (isOnAuthPages || isOnProfilePages)) {
+        if (isAuthenticated && hasValidProfile && (isOnAuthPages || isOnProfilePages)) {
+          print('Router: Redirecting to home (valid profile exists)');
           return home;
         }
 
         return null;
       },
     );
+  }
+
+  static bool _hasValidProfile(Profile? profile) {
+    if (profile == null) {
+      print('Router: Profile is null - returning false');
+      return false;
+    }
+    
+    // Check if basic required fields are present
+    final hasBasicInfo = profile.ageGroup?.isNotEmpty == true &&
+                        profile.occupation?.isNotEmpty == true &&
+                        profile.englishLevel?.isNotEmpty == true;
+    
+    print('Router: Profile validity check:');
+    print('  - ageGroup: "${profile.ageGroup}" (valid: ${profile.ageGroup?.isNotEmpty == true})');
+    print('  - occupation: "${profile.occupation}" (valid: ${profile.occupation?.isNotEmpty == true})');
+    print('  - englishLevel: "${profile.englishLevel}" (valid: ${profile.englishLevel?.isNotEmpty == true})');
+    print('  - hasBasicInfo = $hasBasicInfo');
+    
+    return hasBasicInfo;
   }
 
   static int _getCurrentIndex(String location, Map<String, String> queryParams) {
@@ -198,10 +256,9 @@ class AppRouter {
       print('Debug: Study tab detected via query param, returning index 1');
       return 1;
     }
-    // カテゴリー、例文一覧、学習画面は学習タブ
+    // カテゴリー、例文一覧は学習タブ
     if (location.startsWith(category)) return 1;
     if (location.startsWith(exampleList)) return 1;
-    if (location.startsWith(study)) return 1;
     // その他のページ
     if (location.startsWith(home)) return 0;
     if (location.startsWith(favorites)) return 2;

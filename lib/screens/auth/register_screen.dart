@@ -40,7 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       
       if (success && mounted) {
-        context.go(AppRouter.profileStep1);
+        context.go('/register/profile-setup');
       } else if (appProvider.errorMessage != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

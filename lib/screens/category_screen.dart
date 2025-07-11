@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/level.dart';
 import '../router.dart';
+import '../widgets/app_drawer.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String levelId;
@@ -66,6 +67,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ),
         ),
         actions: [
+          if (_level != null)
+            IconButton(
+              icon: const Icon(Icons.swap_horiz),
+              onPressed: _showCategorySwitcher,
+              tooltip: 'カテゴリー切り替え',
+            ),
           IconButton(
             icon: const Icon(Icons.home),
             onPressed: () => context.go(AppRouter.home),
@@ -73,7 +80,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ),
         ],
       ),
-      drawer: _buildDrawer(context),
+      drawer: const AppDrawer(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _level == null
@@ -106,6 +113,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Widget _buildCategoryGrid() {
+    final categories = _level?.categories ?? [];
+    
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -117,9 +126,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'カテゴリーを選択',
-                  style: TextStyle(
+                Text(
+                  'カテゴリー (${categories.length})',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -138,22 +147,48 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.0,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: _level!.categories.length,
-                itemBuilder: (context, index) {
-                  final category = _level!.categories[index];
-                  return _buildCategoryCard(category);
-                },
-              ),
+              child: categories.isEmpty
+                  ? _buildEmptyState()
+                  : GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.85,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        return _buildCategoryCard(category);
+                      },
+                    ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.category,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'カテゴリーがありません',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -179,7 +214,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.blue[600],
+                  color: _getLevelColor(_level!.order),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -530,6 +565,170 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  void _showCategorySwitcher() async {
+    if (_level == null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.blue[600],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.swap_horiz, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'カテゴリーを選択',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _level!.categories.length,
+                itemBuilder: (context, index) {
+                  final category = _level!.categories[index];
+                  final completedCount = category.examples.where((e) => e.isCompleted).length;
+                  final progressPercent = category.totalExamples > 0 
+                      ? (completedCount / category.totalExamples * 100).round()
+                      : 0;
+                  
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.go('${AppRouter.exampleList}?categoryId=${category.id}');
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(
+                            color: Colors.grey[200]!,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: _getLevelColor(_level!.order),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    category.name,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    category.description,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: progressPercent == 100 ? Colors.green[100] : Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '$progressPercent%',
+                                    style: TextStyle(
+                                      color: progressPercent == 100 ? Colors.green[600] : Colors.grey[600],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$completedCount/${category.totalExamples}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color _getLevelColor(int order) {
     switch (order) {
       case 1:
@@ -540,92 +739,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
         return Colors.orange;
       case 4:
         return Colors.purple;
+      case 5:
+        return Colors.red;
+      case 6:
+        return Colors.teal;
       default:
         return Colors.grey;
     }
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          Consumer<AppProvider>(
-            builder: (context, appProvider, child) {
-              final user = appProvider.currentUser;
-              return UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue[600]!, Colors.blue[400]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                accountName: Text(
-                  user?.name ?? 'ゲストユーザー',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                accountEmail: Text(
-                  user?.email ?? 'guest@example.com',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.blue[600],
-                  ),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('ホーム'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go(AppRouter.home);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('マイページ'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go(AppRouter.profile);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('お気に入り'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go(AppRouter.favorites);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('設定'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Settings functionality
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.help),
-            title: const Text('ヘルプ'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Help functionality
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }

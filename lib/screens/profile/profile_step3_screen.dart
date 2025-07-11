@@ -20,6 +20,31 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
   final List<String> _selectedChallenges = [];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExistingProfile();
+    });
+  }
+
+  void _loadExistingProfile() {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final profile = appProvider.currentUser?.profile;
+    
+    if (profile != null) {
+      print('Step3: Loading existing profile data');
+      setState(() {
+        _selectedLearningGoal = profile.learningGoal;
+        _selectedStudyTimes.clear();
+        _selectedStudyTimes.addAll(profile.studyTime);
+        _selectedTargetStudyMinutes = profile.targetStudyMinutes;
+        _selectedChallenges.clear();
+        _selectedChallenges.addAll(profile.challenges);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -36,7 +61,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                 children: [
                   const StepProgressIndicator(
                     currentStep: 3,
-                    totalSteps: 4,
+                    totalSteps: 5,
                   ),
                   const SizedBox(height: 32),
                   Expanded(
@@ -63,7 +88,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                           const SizedBox(height: 32),
                           _buildRadioSection(
                             '学習目標',
-                            '必須',
+                            '任意',
                             appProvider.mockDataService.learningGoals,
                             _selectedLearningGoal,
                             (value) => setState(() => _selectedLearningGoal = value),
@@ -87,7 +112,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                           const SizedBox(height: 24),
                           _buildRadioSection(
                             '1日の目標学習時間',
-                            '必須',
+                            '任意',
                             appProvider.mockDataService.targetStudyMinutes,
                             _selectedTargetStudyMinutes,
                             (value) => setState(() => _selectedTargetStudyMinutes = value),
@@ -270,21 +295,38 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
   }
 
   bool _canProceed() {
-    return _selectedLearningGoal != null && _selectedTargetStudyMinutes != null;
+    // For development: allow proceeding with minimal data
+    return true;
   }
 
-  void _handleNext() {
+  void _handleNext() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final currentProfile = appProvider.currentUser?.profile ?? Profile();
+    final currentProfile = appProvider.currentUser?.profile;
     
-    final updatedProfile = currentProfile.copyWith(
+    print('Step3: Saving profile with learningGoal: $_selectedLearningGoal, studyTime: $_selectedStudyTimes, targetStudyMinutes: $_selectedTargetStudyMinutes');
+    
+    final updatedProfile = currentProfile?.copyWith(
+      learningGoal: _selectedLearningGoal,
+      studyTime: _selectedStudyTimes,
+      targetStudyMinutes: _selectedTargetStudyMinutes,
+      challenges: _selectedChallenges,
+    ) ?? Profile(
       learningGoal: _selectedLearningGoal,
       studyTime: _selectedStudyTimes,
       targetStudyMinutes: _selectedTargetStudyMinutes,
       challenges: _selectedChallenges,
     );
     
-    appProvider.saveProfile(updatedProfile);
-    context.go(AppRouter.profileStep4);
+    final success = await appProvider.saveProfile(updatedProfile);
+    if (success && mounted) {
+      context.go(AppRouter.profileStep4);
+    } else if (appProvider.errorMessage != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(appProvider.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

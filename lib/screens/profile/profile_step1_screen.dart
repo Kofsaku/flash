@@ -19,6 +19,28 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
   String? _selectedEnglishLevel;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExistingProfile();
+    });
+  }
+
+  void _loadExistingProfile() {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final profile = appProvider.currentUser?.profile;
+    
+    if (profile != null) {
+      print('Step1: Loading existing profile data');
+      setState(() {
+        _selectedAgeGroup = profile.ageGroup;
+        _selectedOccupation = profile.occupation;
+        _selectedEnglishLevel = profile.englishLevel;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +57,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
                 children: [
                   const StepProgressIndicator(
                     currentStep: 1,
-                    totalSteps: 4,
+                    totalSteps: 5,
                   ),
                   const SizedBox(height: 32),
                   Expanded(
@@ -62,7 +84,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
                           const SizedBox(height: 32),
                           _buildSection(
                             '年齢層',
-                            '必須',
+                            '任意',
                             appProvider.mockDataService.ageGroups,
                             _selectedAgeGroup,
                             (value) => setState(() => _selectedAgeGroup = value),
@@ -70,7 +92,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
                           const SizedBox(height: 24),
                           _buildSection(
                             '職業',
-                            '必須',
+                            '任意',
                             appProvider.mockDataService.occupations,
                             _selectedOccupation,
                             (value) => setState(() => _selectedOccupation = value),
@@ -78,7 +100,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
                           const SizedBox(height: 24),
                           _buildSection(
                             '英語学習歴',
-                            '必須',
+                            '任意',
                             appProvider.mockDataService.englishLevels,
                             _selectedEnglishLevel,
                             (value) => setState(() => _selectedEnglishLevel = value),
@@ -141,14 +163,14 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.red[100],
+                color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 required,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.red[600],
+                  color: Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -171,22 +193,36 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
   }
 
   bool _canProceed() {
-    return _selectedAgeGroup != null &&
-        _selectedOccupation != null &&
-        _selectedEnglishLevel != null;
+    // For development: allow proceeding with minimal data
+    return true;
   }
 
-  void _handleNext() {
+  void _handleNext() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final currentProfile = appProvider.currentUser?.profile ?? Profile();
+    final currentProfile = appProvider.currentUser?.profile;
     
-    final updatedProfile = currentProfile.copyWith(
+    print('Step1: Saving profile with ageGroup: $_selectedAgeGroup, occupation: $_selectedOccupation, englishLevel: $_selectedEnglishLevel');
+    
+    final updatedProfile = currentProfile?.copyWith(
+      ageGroup: _selectedAgeGroup,
+      occupation: _selectedOccupation,
+      englishLevel: _selectedEnglishLevel,
+    ) ?? Profile(
       ageGroup: _selectedAgeGroup,
       occupation: _selectedOccupation,
       englishLevel: _selectedEnglishLevel,
     );
     
-    appProvider.saveProfile(updatedProfile);
-    context.go(AppRouter.profileStep2);
+    final success = await appProvider.saveProfile(updatedProfile);
+    if (success && mounted) {
+      context.go(AppRouter.profileStep2);
+    } else if (appProvider.errorMessage != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(appProvider.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

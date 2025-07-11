@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/level.dart';
 import '../router.dart';
+import '../widgets/app_drawer.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -88,7 +89,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         ],
       ),
-      drawer: _buildDrawer(context),
+      drawer: const AppDrawer(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildFavoritesContent(),
@@ -362,87 +363,4 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          Consumer<AppProvider>(
-            builder: (context, appProvider, child) {
-              final user = appProvider.currentUser;
-              return UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue[600]!, Colors.blue[400]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                accountName: Text(
-                  user?.name ?? 'ゲストユーザー',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                accountEmail: Text(
-                  user?.email ?? 'guest@example.com',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.blue[600],
-                  ),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('ホーム'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go(AppRouter.home);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('マイページ'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go(AppRouter.profile);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('お気に入り'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go(AppRouter.favorites);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('設定'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Settings functionality
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.help),
-            title: const Text('ヘルプ'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Help functionality
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }

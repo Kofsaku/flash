@@ -53,8 +53,9 @@ class MainLayout extends StatelessWidget {
         context.go(AppRouter.home);
         break;
       case 1:
-        print('Debug: Navigating to home with tab=study');
-        context.go('${AppRouter.home}?tab=study');
+        print('Debug: Navigating to first level category');
+        // Navigate to the first level's category screen (中学レベル)
+        context.go('${AppRouter.category}?levelId=junior_high');
         break;
       case 2:
         print('Debug: Navigating to favorites');

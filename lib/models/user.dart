@@ -72,6 +72,15 @@ class Profile {
   final String? familyStructure;
   final List<String> englishUsageScenarios;
   final List<String> interestingTopics;
+  
+  // Step 5: 学習特性診断
+  final List<String> learningStyles;
+  final Map<String, String> skillLevels;
+  final List<String> studyEnvironments;
+  final List<String> weakAreas;
+  final String? motivationDetail;
+  final String? correctionStyle;
+  final String? encouragementFrequency;
 
   Profile({
     this.ageGroup,
@@ -88,7 +97,16 @@ class Profile {
     this.familyStructure,
     this.englishUsageScenarios = const [],
     this.interestingTopics = const [],
-  });
+    this.learningStyles = const [],
+    this.skillLevels = const {},
+    this.studyEnvironments = const [],
+    this.weakAreas = const [],
+    this.motivationDetail,
+    this.correctionStyle,
+    this.encouragementFrequency,
+  }) {
+    print('Profile: Constructor called with ageGroup: $ageGroup, occupation: $occupation, englishLevel: $englishLevel');
+  }
 
   Profile copyWith({
     String? ageGroup,
@@ -105,6 +123,13 @@ class Profile {
     String? familyStructure,
     List<String>? englishUsageScenarios,
     List<String>? interestingTopics,
+    List<String>? learningStyles,
+    Map<String, String>? skillLevels,
+    List<String>? studyEnvironments,
+    List<String>? weakAreas,
+    String? motivationDetail,
+    String? correctionStyle,
+    String? encouragementFrequency,
   }) {
     return Profile(
       ageGroup: ageGroup ?? this.ageGroup,
@@ -121,6 +146,13 @@ class Profile {
       familyStructure: familyStructure ?? this.familyStructure,
       englishUsageScenarios: englishUsageScenarios ?? this.englishUsageScenarios,
       interestingTopics: interestingTopics ?? this.interestingTopics,
+      learningStyles: learningStyles ?? this.learningStyles,
+      skillLevels: skillLevels ?? this.skillLevels,
+      studyEnvironments: studyEnvironments ?? this.studyEnvironments,
+      weakAreas: weakAreas ?? this.weakAreas,
+      motivationDetail: motivationDetail ?? this.motivationDetail,
+      correctionStyle: correctionStyle ?? this.correctionStyle,
+      encouragementFrequency: encouragementFrequency ?? this.encouragementFrequency,
     );
   }
 
@@ -140,6 +172,13 @@ class Profile {
       'familyStructure': familyStructure,
       'englishUsageScenarios': englishUsageScenarios,
       'interestingTopics': interestingTopics,
+      'learningStyles': learningStyles,
+      'skillLevels': skillLevels,
+      'studyEnvironments': studyEnvironments,
+      'weakAreas': weakAreas,
+      'motivationDetail': motivationDetail,
+      'correctionStyle': correctionStyle,
+      'encouragementFrequency': encouragementFrequency,
     };
   }
 
@@ -148,17 +187,24 @@ class Profile {
       ageGroup: json['ageGroup'],
       occupation: json['occupation'],
       englishLevel: json['englishLevel'],
-      hobbies: List<String>.from(json['hobbies'] ?? []),
+      hobbies: json['hobbies'] != null ? List<String>.from(json['hobbies']) : [],
       industry: json['industry'],
-      lifestyle: List<String>.from(json['lifestyle'] ?? []),
+      lifestyle: json['lifestyle'] != null ? List<String>.from(json['lifestyle']) : [],
       learningGoal: json['learningGoal'],
-      studyTime: List<String>.from(json['studyTime'] ?? []),
+      studyTime: json['studyTime'] != null ? List<String>.from(json['studyTime']) : [],
       targetStudyMinutes: json['targetStudyMinutes'],
-      challenges: List<String>.from(json['challenges'] ?? []),
+      challenges: json['challenges'] != null ? List<String>.from(json['challenges']) : [],
       region: json['region'],
       familyStructure: json['familyStructure'],
-      englishUsageScenarios: List<String>.from(json['englishUsageScenarios'] ?? []),
-      interestingTopics: List<String>.from(json['interestingTopics'] ?? []),
+      englishUsageScenarios: json['englishUsageScenarios'] != null ? List<String>.from(json['englishUsageScenarios']) : [],
+      interestingTopics: json['interestingTopics'] != null ? List<String>.from(json['interestingTopics']) : [],
+      learningStyles: json['learningStyles'] != null ? List<String>.from(json['learningStyles']) : [],
+      skillLevels: json['skillLevels'] != null ? Map<String, String>.from(json['skillLevels']) : <String, String>{},
+      studyEnvironments: json['studyEnvironments'] != null ? List<String>.from(json['studyEnvironments']) : [],
+      weakAreas: json['weakAreas'] != null ? List<String>.from(json['weakAreas']) : [],
+      motivationDetail: json['motivationDetail'],
+      correctionStyle: json['correctionStyle'],
+      encouragementFrequency: json['encouragementFrequency'],
     );
   }
 }

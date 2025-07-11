@@ -28,13 +28,19 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       final appProvider = Provider.of<AppProvider>(context, listen: false);
       
+      print('Login: Attempting login...');
+      
       final success = await appProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
       
+      print('Login: Login success = $success');
+      print('Login: User profile after login: ${appProvider.currentUser?.profile != null ? "exists" : "null"}');
+      
       if (success && mounted) {
-        context.go(AppRouter.profileStep1);
+        // Let router redirect handle the navigation
+        context.go(AppRouter.home);
       } else if (appProvider.errorMessage != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

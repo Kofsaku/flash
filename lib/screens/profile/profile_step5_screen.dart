@@ -6,22 +6,26 @@ import '../../models/user.dart';
 import '../../router.dart';
 import '../../widgets/progress_indicator.dart';
 
-class ProfileStep4Screen extends StatefulWidget {
-  const ProfileStep4Screen({super.key});
+class ProfileStep5Screen extends StatefulWidget {
+  const ProfileStep5Screen({super.key});
 
   @override
-  State<ProfileStep4Screen> createState() => _ProfileStep4ScreenState();
+  State<ProfileStep5Screen> createState() => _ProfileStep5ScreenState();
 }
 
-class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
-  String? _selectedRegion;
-  String? _selectedFamilyStructure;
-  final List<String> _selectedEnglishUsageScenarios = [];
-  final List<TextEditingController> _topicControllers = [
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-  ];
+class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
+  final List<String> _selectedLearningStyles = [];
+  final Map<String, String> _skillLevels = {
+    'speaking': '',
+    'listening': '',
+    'reading': '',
+    'writing': '',
+  };
+  final List<String> _selectedStudyEnvironments = [];
+  final List<String> _selectedWeakAreas = [];
+  String? _selectedMotivationDetail;
+  String? _selectedCorrectionStyle;
+  String? _selectedEncouragementFrequency;
 
   @override
   void initState() {
@@ -36,28 +40,77 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     final profile = appProvider.currentUser?.profile;
     
     if (profile != null) {
-      print('Step4: Loading existing profile data');
+      print('Step5: Loading existing profile data');
       setState(() {
-        _selectedRegion = profile.region;
-        _selectedFamilyStructure = profile.familyStructure;
-        _selectedEnglishUsageScenarios.clear();
-        _selectedEnglishUsageScenarios.addAll(profile.englishUsageScenarios);
+        _selectedLearningStyles.clear();
+        _selectedLearningStyles.addAll(profile.learningStyles);
         
-        // Load existing topics into text controllers
-        for (int i = 0; i < profile.interestingTopics.length && i < _topicControllers.length; i++) {
-          _topicControllers[i].text = profile.interestingTopics[i];
-        }
+        _skillLevels.clear();
+        _skillLevels.addAll(profile.skillLevels);
+        
+        _selectedStudyEnvironments.clear();
+        _selectedStudyEnvironments.addAll(profile.studyEnvironments);
+        
+        _selectedWeakAreas.clear();
+        _selectedWeakAreas.addAll(profile.weakAreas);
+        
+        _selectedMotivationDetail = profile.motivationDetail;
+        _selectedCorrectionStyle = profile.correctionStyle;
+        _selectedEncouragementFrequency = profile.encouragementFrequency;
       });
     }
   }
 
-  @override
-  void dispose() {
-    for (var controller in _topicControllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
+  final List<String> _learningStyles = [
+    '視覚的学習（図表、テキスト）',
+    '聴覚的学習（音声、会話）',
+    '体験的学習（実践、反復）',
+    'ゲーム要素があると続く',
+    '短時間集中型',
+    'じっくり理解型',
+  ];
+
+  final List<String> _skillLevelOptions = ['苦手', '普通', '得意'];
+
+  final List<String> _studyEnvironments = [
+    '通勤電車内（立ち）',
+    '通勤電車内（座り）',
+    '自宅のデスク',
+    'カフェ・外出先',
+    'ベッド・ソファ',
+    '歩きながら',
+  ];
+
+  final List<String> _weakAreas = [
+    '発音・アクセント',
+    '文法・語順',
+    '語彙・単語',
+    'リスニング',
+    '読解・理解',
+    '会話・コミュニケーション',
+  ];
+
+  final List<String> _motivationDetails = [
+    '1ヶ月以内に成果が欲しい',
+    '3ヶ月以内に成果が欲しい',
+    '半年以内に成果が欲しい',
+    '1年以内に成果が欲しい',
+    'マイペースで続けたい',
+  ];
+
+  final List<String> _correctionStyles = [
+    '優しく指摘してほしい',
+    '詳しく説明してほしい',
+    '簡潔に修正してほしい',
+    '励ましながら教えてほしい',
+  ];
+
+  final List<String> _encouragementFrequencies = [
+    '毎回励ましてほしい',
+    '時々励ましてほしい',
+    '最小限でよい',
+    '成果が出た時だけ',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -75,17 +128,18 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
               child: Column(
                 children: [
                   const StepProgressIndicator(
-                    currentStep: 4,
+                    currentStep: 5,
                     totalSteps: 5,
                   ),
                   const SizedBox(height: 32),
                   Expanded(
                     child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(bottom: 100),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '個人的背景・詳細',
+                            '学習特性診断',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -94,46 +148,86 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'より詳細な情報を教えてください。\n超個別化された学習体験を提供します。\n（すべて任意項目です）',
+                            'あなたの学習スタイルを診断します。\nより効果的な学習方法を提案します。\n（すべて任意項目です）',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey,
                             ),
                           ),
                           const SizedBox(height: 32),
-                          _buildRadioSection(
-                            '居住地域',
-                            '任意',
-                            appProvider.mockDataService.regions,
-                            _selectedRegion,
-                            (value) => setState(() => _selectedRegion = value),
-                          ),
-                          const SizedBox(height: 24),
-                          _buildRadioSection(
-                            '家族構成',
-                            '任意',
-                            appProvider.mockDataService.familyStructures,
-                            _selectedFamilyStructure,
-                            (value) => setState(() => _selectedFamilyStructure = value),
-                          ),
-                          const SizedBox(height: 24),
                           _buildCheckboxSection(
-                            '英語使用場面',
+                            '学習スタイル',
                             '任意',
-                            appProvider.mockDataService.englishUsageScenarios,
-                            _selectedEnglishUsageScenarios,
+                            _learningStyles,
+                            _selectedLearningStyles,
                             (value, checked) {
                               setState(() {
                                 if (checked) {
-                                  _selectedEnglishUsageScenarios.add(value);
+                                  _selectedLearningStyles.add(value);
                                 } else {
-                                  _selectedEnglishUsageScenarios.remove(value);
+                                  _selectedLearningStyles.remove(value);
                                 }
                               });
                             },
                           ),
                           const SizedBox(height: 24),
-                          _buildTextInputSection(),
+                          _buildSkillLevelSection(),
+                          const SizedBox(height: 24),
+                          _buildCheckboxSection(
+                            '学習環境',
+                            '任意',
+                            _studyEnvironments,
+                            _selectedStudyEnvironments,
+                            (value, checked) {
+                              setState(() {
+                                if (checked) {
+                                  _selectedStudyEnvironments.add(value);
+                                } else {
+                                  _selectedStudyEnvironments.remove(value);
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          _buildCheckboxSection(
+                            '苦手分野',
+                            '任意',
+                            _weakAreas,
+                            _selectedWeakAreas,
+                            (value, checked) {
+                              setState(() {
+                                if (checked) {
+                                  _selectedWeakAreas.add(value);
+                                } else {
+                                  _selectedWeakAreas.remove(value);
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          _buildRadioSection(
+                            '学習の動機・目標',
+                            '任意',
+                            _motivationDetails,
+                            _selectedMotivationDetail,
+                            (value) => setState(() => _selectedMotivationDetail = value),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildRadioSection(
+                            '修正・指摘の方法',
+                            '任意',
+                            _correctionStyles,
+                            _selectedCorrectionStyle,
+                            (value) => setState(() => _selectedCorrectionStyle = value),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildRadioSection(
+                            '励ましの頻度',
+                            '任意',
+                            _encouragementFrequencies,
+                            _selectedEncouragementFrequency,
+                            (value) => setState(() => _selectedEncouragementFrequency = value),
+                          ),
                         ],
                       ),
                     ),
@@ -144,7 +238,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            context.go(AppRouter.profileStep3);
+                            context.go(AppRouter.profileStep4);
                           },
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: Colors.blue[600]!),
@@ -164,7 +258,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: _handleNext,
+                          onPressed: appProvider.isLoading ? null : _handleComplete,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue[600],
                             foregroundColor: Colors.white,
@@ -182,7 +276,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                                   ),
                                 )
                               : const Text(
-                                  '次へ',
+                                  '完了',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -198,6 +292,57 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildCheckboxSection(
+    String title,
+    String required,
+    List<String> options,
+    List<String> selectedValues,
+    Function(String, bool) onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                required,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...options.map((option) {
+          return CheckboxListTile(
+            title: Text(option, style: const TextStyle(fontSize: 14)),
+            value: selectedValues.contains(option),
+            onChanged: (checked) => onChanged(option, checked ?? false),
+            activeColor: Colors.blue[600],
+            contentPadding: EdgeInsets.zero,
+          );
+        }).toList(),
+      ],
     );
   }
 
@@ -253,65 +398,14 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     );
   }
 
-  Widget _buildCheckboxSection(
-    String title,
-    String required,
-    List<String> options,
-    List<String> selectedValues,
-    Function(String, bool) onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                required,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...options.map((option) {
-          return CheckboxListTile(
-            title: Text(option, style: const TextStyle(fontSize: 14)),
-            value: selectedValues.contains(option),
-            onChanged: (checked) => onChanged(option, checked ?? false),
-            activeColor: Colors.blue[600],
-            contentPadding: EdgeInsets.zero,
-          );
-        }).toList(),
-      ],
-    );
-  }
-
-  Widget _buildTextInputSection() {
+  Widget _buildSkillLevelSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             const Text(
-              '興味のあるトピック',
+              'スキル別自己評価',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -335,58 +429,92 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        const Text(
-          '最近関心のあることを3つまで入力してください\n例：「最新のAI技術」「韓国ドラマ」「キャンプ」',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
         const SizedBox(height: 12),
-        ...List.generate(3, (index) {
+        ..._skillLevels.keys.map((skill) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: TextField(
-              controller: _topicControllers[index],
-              decoration: InputDecoration(
-                labelText: 'トピック${index + 1}',
-                border: const OutlineInputBorder(),
-                hintText: '例：AI技術、韓国ドラマ、キャンプ',
-              ),
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getSkillDisplayName(skill),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  children: _skillLevelOptions.map((level) {
+                    return SizedBox(
+                      width: 120,
+                      child: RadioListTile<String>(
+                        title: Text(level, style: const TextStyle(fontSize: 12)),
+                        value: level,
+                        groupValue: _skillLevels[skill],
+                        onChanged: (value) {
+                          setState(() {
+                            _skillLevels[skill] = value ?? '';
+                          });
+                        },
+                        activeColor: Colors.blue[600],
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           );
-        }),
+        }).toList(),
       ],
     );
   }
 
-  void _handleNext() async {
+  String _getSkillDisplayName(String skill) {
+    switch (skill) {
+      case 'speaking':
+        return 'スピーキング';
+      case 'listening':
+        return 'リスニング';
+      case 'reading':
+        return 'リーディング';
+      case 'writing':
+        return 'ライティング';
+      default:
+        return skill;
+    }
+  }
+
+  void _handleComplete() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
     
-    final interestingTopics = _topicControllers
-        .map((controller) => controller.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
+    print('Step5: Saving final profile with learningStyles: $_selectedLearningStyles, skillLevels: $_skillLevels');
     
-    print('Step4: Saving profile with region: $_selectedRegion, familyStructure: $_selectedFamilyStructure, topics: $interestingTopics');
-    
+    // Create updated profile with learning characteristics
     final updatedProfile = currentProfile?.copyWith(
-      region: _selectedRegion,
-      familyStructure: _selectedFamilyStructure,
-      englishUsageScenarios: _selectedEnglishUsageScenarios,
-      interestingTopics: interestingTopics,
+      learningStyles: _selectedLearningStyles,
+      skillLevels: _skillLevels,
+      studyEnvironments: _selectedStudyEnvironments,
+      weakAreas: _selectedWeakAreas,
+      motivationDetail: _selectedMotivationDetail,
+      correctionStyle: _selectedCorrectionStyle,
+      encouragementFrequency: _selectedEncouragementFrequency,
     ) ?? Profile(
-      region: _selectedRegion,
-      familyStructure: _selectedFamilyStructure,
-      englishUsageScenarios: _selectedEnglishUsageScenarios,
-      interestingTopics: interestingTopics,
+      learningStyles: _selectedLearningStyles,
+      skillLevels: _skillLevels,
+      studyEnvironments: _selectedStudyEnvironments,
+      weakAreas: _selectedWeakAreas,
+      motivationDetail: _selectedMotivationDetail,
+      correctionStyle: _selectedCorrectionStyle,
+      encouragementFrequency: _selectedEncouragementFrequency,
     );
     
     final success = await appProvider.saveProfile(updatedProfile);
+    
     if (success && mounted) {
-      context.go(AppRouter.profileStep5);
+      context.go(AppRouter.loading);
     } else if (appProvider.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

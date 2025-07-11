@@ -19,6 +19,30 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
   final List<String> _selectedLifestyle = [];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExistingProfile();
+    });
+  }
+
+  void _loadExistingProfile() {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final profile = appProvider.currentUser?.profile;
+    
+    if (profile != null) {
+      print('Step2: Loading existing profile data');
+      setState(() {
+        _selectedHobbies.clear();
+        _selectedHobbies.addAll(profile.hobbies);
+        _selectedIndustry = profile.industry;
+        _selectedLifestyle.clear();
+        _selectedLifestyle.addAll(profile.lifestyle);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +59,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
                 children: [
                   const StepProgressIndicator(
                     currentStep: 2,
-                    totalSteps: 4,
+                    totalSteps: 5,
                   ),
                   const SizedBox(height: 32),
                   Expanded(
@@ -62,7 +86,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
                           const SizedBox(height: 32),
                           _buildCheckboxSection(
                             '趣味・娯楽',
-                            '最低2つ選択',
+                            '任意',
                             appProvider.mockDataService.hobbies,
                             _selectedHobbies,
                             (value, checked) {
@@ -78,7 +102,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
                           const SizedBox(height: 24),
                           _buildRadioSection(
                             '仕事・業界',
-                            '必須',
+                            '任意',
                             appProvider.mockDataService.industries,
                             _selectedIndustry,
                             (value) => setState(() => _selectedIndustry = value),
@@ -261,20 +285,36 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
   }
 
   bool _canProceed() {
-    return _selectedHobbies.length >= 2 && _selectedIndustry != null;
+    // For development: allow proceeding with minimal data
+    return true;
   }
 
-  void _handleNext() {
+  void _handleNext() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final currentProfile = appProvider.currentUser?.profile ?? Profile();
+    final currentProfile = appProvider.currentUser?.profile;
     
-    final updatedProfile = currentProfile.copyWith(
+    print('Step2: Saving profile with hobbies: $_selectedHobbies, industry: $_selectedIndustry, lifestyle: $_selectedLifestyle');
+    
+    final updatedProfile = currentProfile?.copyWith(
+      hobbies: _selectedHobbies,
+      industry: _selectedIndustry,
+      lifestyle: _selectedLifestyle,
+    ) ?? Profile(
       hobbies: _selectedHobbies,
       industry: _selectedIndustry,
       lifestyle: _selectedLifestyle,
     );
     
-    appProvider.saveProfile(updatedProfile);
-    context.go(AppRouter.profileStep3);
+    final success = await appProvider.saveProfile(updatedProfile);
+    if (success && mounted) {
+      context.go(AppRouter.profileStep3);
+    } else if (appProvider.errorMessage != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(appProvider.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
