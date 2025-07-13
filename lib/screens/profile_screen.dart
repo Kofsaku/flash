@@ -30,9 +30,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () => context.go(AppRouter.home),
-            tooltip: 'ホームに戻る',
+            icon: const Icon(Icons.edit),
+            onPressed: () => context.go(AppRouter.profileEdit),
+            tooltip: 'プロフィール編集',
           ),
         ],
       ),
@@ -45,13 +45,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildUserInfo(appProvider),
-                  const SizedBox(height: 24),
-                  _buildStatsSection(appProvider),
-                  const SizedBox(height: 24),
-                  _buildLearningProgressSection(appProvider),
-                  const SizedBox(height: 24),
-                  _buildQuickActionsSection(context),
+                  _buildTodayProgress(appProvider),
+                  const SizedBox(height: 20),
+                  _buildWeeklyActivity(appProvider),
+                  const SizedBox(height: 20),
+                  _buildLevelProgress(appProvider),
+                  const SizedBox(height: 20),
+                  _buildStudyStats(appProvider),
+                  const SizedBox(height: 20),
+                  _buildRecommendations(appProvider),
                 ],
               ),
             ),
@@ -61,72 +63,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildUserInfo(AppProvider appProvider) {
+  Widget _buildTodayProgress(AppProvider appProvider) {
+    final todayCompleted = _getTodayCompleted(appProvider);
+    final todayTarget = 10; // 1日の目標例文数
+    final progress = (todayCompleted / todayTarget).clamp(0.0, 1.0);
     final user = appProvider.currentUser;
-    final completedTotal = _getTotalCompleted(appProvider);
-    final totalExamples = _getTotalExamples(appProvider);
-    final progressPercentage = totalExamples > 0 ? (completedTotal / totalExamples * 100).toDouble() : 0.0;
+    final streak = _getStreakDays(appProvider);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.blue[600],
-            child: Icon(
-              Icons.person,
-              size: 40,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            user?.name ?? 'ゲストユーザー',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            user?.email ?? 'guest@example.com',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.blue[100],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getLevelIcon(progressPercentage),
-                  color: Colors.blue[600],
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _getLevelName(progressPercentage),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[600],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'こんにちは、${user?.name ?? 'ゲスト'}さん',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '今日の学習目標: $todayCompleted / $todayTarget 例文',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              if (streak > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[100],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.local_fire_department,
+                        color: Colors.orange[700],
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$streak日',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress >= 1.0 ? Colors.green : Colors.blue,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            progress >= 1.0 ? '今日の目標達成！🎉' : '${(progress * 100).toInt()}% 完了',
+            style: TextStyle(
+              fontSize: 12,
+              color: progress >= 1.0 ? Colors.green : Colors.grey[600],
+              fontWeight: progress >= 1.0 ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ],
@@ -134,340 +165,652 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatsSection(AppProvider appProvider) {
-    final completedCount = _getTotalCompleted(appProvider);
-    final favoriteCount = _getTotalFavorites(appProvider);
-    final totalExamples = _getTotalExamples(appProvider);
-    final studyDays = _getStudyDays(); // Mock data
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '学習統計',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                icon: Icons.assignment_turned_in,
-                value: completedCount.toString(),
-                label: '完了済み',
-                color: Colors.green,
-                subtitle: '例文',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                icon: Icons.favorite,
-                value: favoriteCount.toString(),
-                label: 'お気に入り',
-                color: Colors.red,
-                subtitle: '例文',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                icon: Icons.library_books,
-                value: totalExamples.toString(),
-                label: '総例文数',
-                color: Colors.blue,
-                subtitle: '例文',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                icon: Icons.calendar_today,
-                value: studyDays.toString(),
-                label: '学習日数',
-                color: Colors.orange,
-                subtitle: '日',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String value,
-    required String label,
-    required String subtitle,
-    required Color color,
-  }) {
+  Widget _buildWeeklyActivity(AppProvider appProvider) {
+    final weekData = _getWeeklyData(appProvider);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
-          ),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[500],
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildLearningProgressSection(AppProvider appProvider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '学習進捗',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '今週の学習活動',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        ...appProvider.levels.map((level) => _buildLevelProgressCard(level)),
-      ],
-    );
-  }
-
-  Widget _buildLevelProgressCard(Level level) {
-    final progress = level.progress;
-    final color = _getLevelColor(level.order);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          context.go('${AppRouter.category}?levelId=${level.id}');
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    level.order.toString(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              for (final day in weekData)
+                Column(
                   children: [
-                    Text(
-                      level.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      level.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: Colors.grey[200],
-                            valueColor: AlwaysStoppedAnimation<Color>(color),
-                          ),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: day['completed'] > 0
+                            ? Colors.blue.withOpacity(day['completed'] / 20)
+                            : Colors.grey[100],
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: day['isToday'] ? Colors.blue : Colors.transparent,
+                          width: 2,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${(progress * 100).toInt()}%',
+                      ),
+                      child: Center(
+                        child: Text(
+                          day['completed'].toString(),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: color,
+                            color: day['completed'] > 0 ? Colors.blue[800] : Colors.grey,
                           ),
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${level.completedExamples}/${level.totalExamples} 例文完了',
+                      day['name'],
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                        fontSize: 10,
+                        color: day['isToday'] ? Colors.blue : Colors.grey[600],
+                        fontWeight: day['isToday'] ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   ],
                 ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _getTodayCompleted(AppProvider appProvider) {
+    // モックデータ: 実際の実装では今日の完了数を取得
+    // 今日は12時間のうち、どれくらい進んでいるかで計算
+    final now = DateTime.now();
+    final hourOfDay = now.hour;
+    final baseCompleted = (hourOfDay * 0.6).floor(); // 1時間に0.6例文のペース
+    return baseCompleted.clamp(0, 15); // 最大15例文
+  }
+
+  int _getStreakDays(AppProvider appProvider) {
+    // TODO: 実際の連続学習日数を取得する実装
+    return 5;
+  }
+
+  List<Map<String, dynamic>> _getWeeklyData(AppProvider appProvider) {
+    final days = ['月', '火', '水', '木', '金', '土', '日'];
+    final today = DateTime.now().weekday - 1;
+    
+    // モックデータ: 過去の学習パターンを生成
+    final data = List.generate(7, (index) {
+      if (index == today) {
+        return _getTodayCompleted(appProvider);
+      } else if (index < today) {
+        // 過去の日は10-20の範囲でランダム
+        return 10 + (index * 3) % 11;
+      } else {
+        // 未来の日は0
+        return 0;
+      }
+    });
+    
+    return List.generate(7, (index) => {
+      'name': days[index],
+      'completed': data[index],
+      'isToday': index == today,
+    });
+  }
+
+  int _getAccuracyRate(AppProvider appProvider) {
+    // TODO: 実際の正解率を計算する実装
+    return 85;
+  }
+
+  List<Map<String, dynamic>> _getWeakCategories(AppProvider appProvider) {
+    List<Map<String, dynamic>> weakCategories = [];
+    
+    try {
+      for (final level in appProvider.levels) {
+        for (final category in level.categories) {
+          if (category?.examples == null) continue;
+          
+          final completedExamples = category.examples.where((e) => e?.isCompleted == true).length;
+          final totalExamples = category.examples.length;
+          final accuracy = _getCategoryAccuracy(category);
+          
+          // 苦手条件: 正解率が70%以下、または完了率が50%以下
+          if ((accuracy < 70 && completedExamples > 0) || 
+              (totalExamples > 0 && completedExamples / totalExamples < 0.5)) {
+            weakCategories.add({
+              'id': category.id ?? '',
+              'name': category.name ?? 'Unknown',
+              'accuracyRate': accuracy,
+              'completionRate': totalExamples > 0 ? (completedExamples / totalExamples * 100).toInt() : 0,
+              'priority': accuracy < 50 ? 'high' : 'medium',
+            });
+          }
+        }
+      }
+      
+      // 正解率の低い順にソート
+      weakCategories.sort((a, b) => (a['accuracyRate'] as int).compareTo(b['accuracyRate'] as int));
+    } catch (e) {
+      print('Error in _getWeakCategories: $e');
+    }
+    
+    return weakCategories;
+  }
+  
+  int _getCategoryAccuracy(dynamic category) {
+    if (category?.examples == null) return 100;
+    
+    final completedExamples = category.examples.where((e) => e?.isCompleted == true).toList();
+    if (completedExamples.isEmpty) return 100; // 未学習の場合は100%として扱う
+    
+    // モックデータとして、カテゴリー名に基づいて正解率を計算
+    final hash = (category.name ?? '').hashCode;
+    return 60 + (hash.abs() % 30); // 60-89%の範囲でランダムな正解率
+  }
+  
+  List<Map<String, dynamic>> _getRecommendations(AppProvider appProvider) {
+    List<Map<String, dynamic>> recommendations = [];
+    
+    try {
+      // 1. 苦手カテゴリーの復習
+      final weakCategories = _getWeakCategories(appProvider);
+      for (final weak in weakCategories.take(2)) {
+        recommendations.add({
+          'type': 'review',
+          'title': '${weak['name']}を復習',
+          'subtitle': '正解率: ${weak['accuracyRate']}%',
+          'icon': Icons.refresh,
+          'color': Colors.orange,
+          'action': () => context.go('${AppRouter.exampleList}?categoryId=${weak['id']}'),
+        });
+      }
+      
+      // 2. 未完了のカテゴリー
+      final incompleteCategories = _getIncompleteCategories(appProvider);
+      for (final incomplete in incompleteCategories.take(2)) {
+        recommendations.add({
+          'type': 'continue',
+          'title': '${incomplete['name']}を続ける',
+          'subtitle': '進捗: ${incomplete['completionRate']}%',
+          'icon': Icons.play_arrow,
+          'color': Colors.blue,
+          'action': () => context.go('${AppRouter.exampleList}?categoryId=${incomplete['id']}'),
+        });
+      }
+      
+      // 3. お気に入りの復習
+      final favoriteCategories = _getFavoriteCategories(appProvider);
+      if (favoriteCategories.isNotEmpty) {
+        final favorite = favoriteCategories.first;
+        recommendations.add({
+          'type': 'favorite',
+          'title': 'お気に入りを復習',
+          'subtitle': '${favorite['name']} (${favorite['count']}件)',
+          'icon': Icons.favorite,
+          'color': Colors.red,
+          'action': () => context.go(AppRouter.favorites),
+        });
+      }
+      
+      // 4. 今日の目標達成のための提案
+      final todayCompleted = _getTodayCompleted(appProvider);
+      if (todayCompleted < 10) {
+        final remaining = 10 - todayCompleted;
+        recommendations.add({
+          'type': 'daily_goal',
+          'title': '今日の目標達成',
+          'subtitle': 'あと$remaining例文で目標達成！',
+          'icon': Icons.flag,
+          'color': Colors.green,
+          'action': () => context.go(AppRouter.home),
+        });
+      }
+    } catch (e) {
+      print('Error in _getRecommendations: $e');
+    }
+    
+    return recommendations;
+  }
+  
+  List<Map<String, dynamic>> _getIncompleteCategories(AppProvider appProvider) {
+    List<Map<String, dynamic>> incomplete = [];
+    
+    try {
+      for (final level in appProvider.levels) {
+        for (final category in level.categories) {
+          if (category?.examples == null) continue;
+          
+          final completedExamples = category.examples.where((e) => e?.isCompleted == true).length;
+          final totalExamples = category.examples.length;
+          final completionRate = totalExamples > 0 ? (completedExamples / totalExamples * 100).toInt() : 0;
+          
+          // 未完了条件: 完了率が80%以下で、1つ以上は完了している
+          if (completionRate < 80 && completedExamples > 0) {
+            incomplete.add({
+              'id': category.id ?? '',
+              'name': category.name ?? 'Unknown',
+              'completionRate': completionRate,
+            });
+          }
+        }
+      }
+      
+      // 完了率の高い順にソート（続けやすいものから）
+      incomplete.sort((a, b) => (b['completionRate'] as int).compareTo(a['completionRate'] as int));
+    } catch (e) {
+      print('Error in _getIncompleteCategories: $e');
+    }
+    
+    return incomplete;
+  }
+  
+  List<Map<String, dynamic>> _getFavoriteCategories(AppProvider appProvider) {
+    Map<String, Map<String, dynamic>> favoriteCounts = {};
+    
+    try {
+      for (final level in appProvider.levels) {
+        for (final category in level.categories) {
+          if (category?.examples == null) continue;
+          
+          final favoriteCount = category.examples.where((e) => e?.isFavorite == true).length;
+          if (favoriteCount > 0) {
+            final categoryId = category.id ?? '';
+            favoriteCounts[categoryId] = {
+              'id': categoryId,
+              'name': category.name ?? 'Unknown',
+              'count': favoriteCount,
+            };
+          }
+        }
+      }
+      
+      final result = favoriteCounts.values.toList();
+      result.sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
+      
+      return result;
+    } catch (e) {
+      print('Error in _getFavoriteCategories: $e');
+      return [];
+    }
+  }
+
+  Widget _buildLevelProgress(AppProvider appProvider) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'レベル別進捗',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 16,
+              TextButton(
+                onPressed: () => context.go(AppRouter.home),
+                child: const Text(
+                  'すべて見る',
+                  style: TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          ...appProvider.levels.take(3).map((level) => _buildCompactLevelProgress(level)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactLevelProgress(Level level) {
+    final progress = level.progress;
+    final color = _getLevelColor(level.order);
+
+    return InkWell(
+      onTap: () {
+        context.go('${AppRouter.category}?levelId=${level.id}');
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  level.order.toString(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        level.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '${level.completedExamples}/${level.totalExamples}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildQuickActionsSection(BuildContext context) {
+  Widget _buildStudyStats(AppProvider appProvider) {
+    final totalCompleted = _getTotalCompleted(appProvider);
+    final totalExamples = _getTotalExamples(appProvider);
+    final favoriteCount = _getTotalFavorites(appProvider);
+    final accuracyRate = _getAccuracyRate(appProvider);
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '学習統計',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  label: '完了率',
+                  value: '${((totalCompleted / totalExamples) * 100).toInt()}%',
+                  icon: Icons.check_circle,
+                  color: Colors.green,
+                ),
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  label: '正解率',
+                  value: '$accuracyRate%',
+                  icon: Icons.insights,
+                  color: Colors.blue,
+                ),
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  label: 'お気に入り',
+                  value: favoriteCount.toString(),
+                  icon: Icons.favorite,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'クイックアクション',
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.favorite,
-                label: 'お気に入り',
-                color: Colors.red,
-                onTap: () => context.go(AppRouter.favorites),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.home,
-                label: 'ホームに戻る',
-                color: Colors.blue,
-                onTap: () => context.go(AppRouter.home),
-              ),
-            ),
-          ],
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: color,
+  Widget _buildRecommendations(AppProvider appProvider) {
+    final recommendations = _getRecommendations(appProvider);
+    if (recommendations.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'おすすめ',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...recommendations.take(4).map((recommendation) => 
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: InkWell(
+                onTap: recommendation['action'],
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: recommendation['color'].withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: recommendation['color'].withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: recommendation['color'].withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          recommendation['icon'],
+                          color: recommendation['color'],
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              recommendation['title'],
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: recommendation['color'],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              recommendation['subtitle'],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: recommendation['color'].withOpacity(0.7),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   int _getTotalCompleted(AppProvider appProvider) {
     int total = 0;
-    for (final level in appProvider.levels) {
-      total += level.completedExamples;
+    try {
+      for (final level in appProvider.levels) {
+        total += level.completedExamples ?? 0;
+      }
+    } catch (e) {
+      print('Error in _getTotalCompleted: $e');
     }
     return total;
   }
 
   int _getTotalFavorites(AppProvider appProvider) {
     int total = 0;
-    for (final level in appProvider.levels) {
-      for (final category in level.categories) {
-        total += category.examples.where((e) => e.isFavorite).length;
+    try {
+      for (final level in appProvider.levels) {
+        for (final category in level.categories) {
+          if (category?.examples != null) {
+            total += category.examples.where((e) => e?.isFavorite == true).length;
+          }
+        }
       }
+    } catch (e) {
+      print('Error in _getTotalFavorites: $e');
     }
     return total;
   }
 
   int _getTotalExamples(AppProvider appProvider) {
     int total = 0;
-    for (final level in appProvider.levels) {
-      total += level.totalExamples;
+    try {
+      for (final level in appProvider.levels) {
+        total += level.totalExamples ?? 0;
+      }
+    } catch (e) {
+      print('Error in _getTotalExamples: $e');
     }
     return total;
   }
 
-  int _getStudyDays() {
-    // Mock data - in real app, this would come from user statistics
-    return 15;
-  }
 
   Color _getLevelColor(int order) {
     switch (order) {
@@ -488,20 +831,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  IconData _getLevelIcon(double progressPercentage) {
-    if (progressPercentage >= 80) return Icons.star;
-    if (progressPercentage >= 60) return Icons.trending_up;
-    if (progressPercentage >= 40) return Icons.school;
-    if (progressPercentage >= 20) return Icons.play_circle_filled;
-    return Icons.play_arrow;
-  }
-
-  String _getLevelName(double progressPercentage) {
-    if (progressPercentage >= 80) return 'エキスパート';
-    if (progressPercentage >= 60) return '上級者';
-    if (progressPercentage >= 40) return '中級者';
-    if (progressPercentage >= 20) return '初級者';
-    return 'ビギナー';
-  }
 
 }
