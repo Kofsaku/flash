@@ -107,6 +107,20 @@ class MockDataService {
     }
   }
 
+  Future<void> updateDailyGoal(int dailyGoal) async {
+    print('MockDataService: Updating daily goal to $dailyGoal...');
+    
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(dailyGoal: dailyGoal);
+      print('MockDataService: Daily goal updated successfully to ${_currentUser!.dailyGoal}');
+    } else {
+      print('MockDataService: ERROR - No current user to update daily goal!');
+      throw Exception('No current user to update daily goal');
+    }
+  }
+
   Future<List<Level>> getLevels() async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _levels;

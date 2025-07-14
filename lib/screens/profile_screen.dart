@@ -65,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildTodayProgress(AppProvider appProvider) {
     final todayCompleted = _getTodayCompleted(appProvider);
-    final todayTarget = 10; // 1日の目標例文数
+    final todayTarget = appProvider.currentUser?.dailyGoal ?? 10; // ユーザー設定の目標値
     final progress = (todayCompleted / todayTarget).clamp(0.0, 1.0);
     final user = appProvider.currentUser;
     final streak = _getStreakDays(appProvider);
@@ -102,12 +102,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '今日の学習目標: $todayCompleted / $todayTarget 例文',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '今日の学習目標: $todayCompleted / $todayTarget 例文',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => context.go(AppRouter.dailyGoalSetting),
+                        child: Icon(
+                          Icons.settings,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -376,8 +389,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       
       // 4. 今日の目標達成のための提案
       final todayCompleted = _getTodayCompleted(appProvider);
-      if (todayCompleted < 10) {
-        final remaining = 10 - todayCompleted;
+      final todayTarget = appProvider.currentUser?.dailyGoal ?? 10;
+      if (todayCompleted < todayTarget) {
+        final remaining = todayTarget - todayCompleted;
         recommendations.add({
           'type': 'daily_goal',
           'title': '今日の目標達成',

@@ -117,6 +117,29 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateDailyGoal(int dailyGoal) async {
+    print('AppProvider: Updating daily goal - Goal: $dailyGoal');
+    
+    _setLoading(true);
+    try {
+      await _mockDataService.updateDailyGoal(dailyGoal);
+      _currentUser = _mockDataService.currentUser;
+      _errorMessage = null;
+      
+      print('AppProvider: Daily goal updated successfully');
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('AppProvider: Error updating daily goal: $e');
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> loadLevels() async {
     _setLoading(true);
     try {

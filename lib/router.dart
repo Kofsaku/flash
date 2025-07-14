@@ -23,6 +23,7 @@ import 'screens/error_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/profile_edit_screen.dart';
+import 'screens/settings/daily_goal_setting_screen.dart';
 import 'screens/category_management_screen.dart';
 import 'widgets/main_layout.dart';
 
@@ -45,6 +46,7 @@ class AppRouter {
   static const String favorites = '/favorites';
   static const String profile = '/profile';
   static const String profileEdit = '/profile/edit';
+  static const String dailyGoalSetting = '/settings/daily-goal';
   static const String categoryManagement = '/category-management';
   static const String error = '/error';
 
@@ -141,6 +143,11 @@ class AppRouter {
               path: profileEdit,
               name: 'profileEdit',
               builder: (context, state) => const ProfileEditScreen(),
+            ),
+            GoRoute(
+              path: dailyGoalSetting,
+              name: 'dailyGoalSetting',
+              builder: (context, state) => const DailyGoalSettingScreen(),
             ),
             GoRoute(
               path: categoryManagement,

@@ -155,7 +155,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -287,6 +292,26 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
               label: const Text('パスワードを変更'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange[600],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          const Text('学習設定', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () => context.go('/settings/daily-goal'),
+              icon: const Icon(Icons.flag),
+              label: const Text('1日の学習目標を設定'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
