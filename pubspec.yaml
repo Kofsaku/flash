@@ -1,5 +1,5 @@
 name: flash_composition_app
-description: "A new Flutter project."
+description: "瞬間英作文アプリ - 英語学習を効率的にサポートする学習アプリ"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

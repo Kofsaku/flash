@@ -222,7 +222,7 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -236,7 +236,7 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
   void _handleQuickStart() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     
-    print('QuickStart: Creating profile with Age: $_selectedAgeGroup, Level: $_selectedEnglishLevel, Goal: $_selectedLearningGoal');
+    // Creating quick profile
     
     // Create minimal profile with smart defaults
     final quickProfile = Profile(

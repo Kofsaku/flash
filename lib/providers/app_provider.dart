@@ -11,13 +11,7 @@ class AppProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   
-  User? get currentUser {
-    print('AppProvider: Getting currentUser - ${_currentUser != null ? "exists" : "null"}, profile: ${_currentUser?.profile != null ? "exists" : "null"}');
-    if (_currentUser?.profile != null) {
-      print('AppProvider: Current profile ageGroup: ${_currentUser!.profile!.ageGroup}');
-    }
-    return _currentUser;
-  }
+  User? get currentUser => _currentUser;
   List<Level> get levels => _levels;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -30,11 +24,9 @@ class AppProvider extends ChangeNotifier {
       _levels = _mockDataService.levels;
       _errorMessage = null;
       notifyListeners();
-      print('App initialization completed successfully');
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
-      print('App initialization error: $e');
     }
   }
 
@@ -71,21 +63,14 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<bool> saveProfile(Profile profile) async {
-    print('AppProvider: Starting to save profile...');
-    print('AppProvider: Profile data - AgeGroup: ${profile.ageGroup}, Industry: ${profile.industry}, Hobbies: ${profile.hobbies}');
-    
     _setLoading(true);
     try {
       await _mockDataService.saveProfile(profile);
       _currentUser = _mockDataService.currentUser;
       _errorMessage = null;
-      
-      print('AppProvider: Profile saved successfully. User profile: ${_currentUser?.profile?.toJson()}');
-      
       notifyListeners();
       return true;
     } catch (e) {
-      print('AppProvider: Error saving profile: $e');
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -95,20 +80,14 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<bool> updateUserInfo(String name, String email) async {
-    print('AppProvider: Updating user info - Name: $name, Email: $email');
-    
     _setLoading(true);
     try {
       await _mockDataService.updateUserInfo(name, email);
       _currentUser = _mockDataService.currentUser;
       _errorMessage = null;
-      
-      print('AppProvider: User info updated successfully');
-      
       notifyListeners();
       return true;
     } catch (e) {
-      print('AppProvider: Error updating user info: $e');
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -118,20 +97,14 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<bool> updateDailyGoal(int dailyGoal) async {
-    print('AppProvider: Updating daily goal - Goal: $dailyGoal');
-    
     _setLoading(true);
     try {
       await _mockDataService.updateDailyGoal(dailyGoal);
       _currentUser = _mockDataService.currentUser;
       _errorMessage = null;
-      
-      print('AppProvider: Daily goal updated successfully');
-      
       notifyListeners();
       return true;
     } catch (e) {
-      print('AppProvider: Error updating daily goal: $e');
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -176,7 +149,30 @@ class AppProvider extends ChangeNotifier {
 
   Future<List<Example>> getExamples(String categoryId) async {
     try {
-      return await _mockDataService.getExamples(categoryId);
+      // パーソナライズ例文を含む例文リストを取得
+      return await _mockDataService.getPersonalizedExamples(categoryId);
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return [];
+    }
+  }
+
+  /// 基本例文のみを取得（パーソナライゼーション無し）
+  Future<List<Example>> getBaseExamples(String categoryId) async {
+    try {
+      return await _mockDataService.getBaseExamples(categoryId);
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return [];
+    }
+  }
+
+  /// パーソナライズ例文を含む例文リストを取得（明示的メソッド）
+  Future<List<Example>> getPersonalizedExamples(String categoryId) async {
+    try {
+      return await _mockDataService.getPersonalizedExamples(categoryId);
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();

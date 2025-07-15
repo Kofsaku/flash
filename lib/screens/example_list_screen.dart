@@ -34,8 +34,11 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     
     try {
+      print('ExampleListScreen: Loading examples for category ${widget.categoryId}');
       final category = await appProvider.getCategory(widget.categoryId);
       final examples = await appProvider.getExamples(widget.categoryId);
+      
+      print('ExampleListScreen: Received ${examples.length} examples');
       
       // Find the levelId for this category
       String? levelId;
@@ -56,8 +59,10 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
           _levelId = levelId;
           _isLoading = false;
         });
+        print('ExampleListScreen: Set state with ${_examples.length} examples');
       }
     } catch (e) {
+      print('ExampleListScreen: Error loading examples: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -375,10 +380,13 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
     final level = await appProvider.getLevel(_levelId!);
     if (level == null) return;
     
+    // ignore: use_build_context_synchronously
     showModalBottomSheet(
+      // ignore: use_build_context_synchronously
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // ignore: use_build_context_synchronously
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
@@ -446,7 +454,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
                           boxShadow: [
                             if (isSelected)
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),

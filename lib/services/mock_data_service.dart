@@ -1,5 +1,8 @@
 import '../models/user.dart';
 import '../models/level.dart';
+import '../models/example_template.dart';
+import 'local_personalization_engine.dart';
+import 'personalization_template_service.dart';
 
 class MockDataService {
   static final MockDataService _instance = MockDataService._internal();
@@ -8,6 +11,7 @@ class MockDataService {
 
   User? _currentUser;
   List<Level> _levels = [];
+  final LocalPersonalizationEngine _personalizationEngine = LocalPersonalizationEngine();
 
   User? get currentUser => _currentUser;
   List<Level> get levels => _levels;
@@ -18,7 +22,6 @@ class MockDataService {
   }
 
   Future<User> login(String email, String password) async {
-    print('MockDataService: Login called for email: $email');
     await Future.delayed(const Duration(seconds: 1));
     
     // Create a complete default profile for existing users
@@ -57,12 +60,10 @@ class MockDataService {
       profile: defaultProfile,
     );
     
-    print('MockDataService: User created with complete profile');
     return _currentUser!;
   }
 
   Future<User> register(String email, String password, String name) async {
-    print('MockDataService: Register called for email: $email, name: $name');
     await Future.delayed(const Duration(seconds: 1));
     
     _currentUser = User(
@@ -73,12 +74,10 @@ class MockDataService {
       profile: null, // Explicitly set profile to null
     );
     
-    print('MockDataService: User registered with profile: ${_currentUser!.profile}');
     return _currentUser!;
   }
 
   Future<void> updateUserInfo(String name, String email) async {
-    print('MockDataService: Updating user info - Name: $name, Email: $email');
     await Future.delayed(const Duration(milliseconds: 500));
     
     if (_currentUser != null) {
@@ -86,37 +85,25 @@ class MockDataService {
         name: name,
         email: email,
       );
-      print('MockDataService: User info updated successfully');
     } else {
-      print('MockDataService: ERROR - No current user to update!');
       throw Exception('No current user to update');
     }
   }
 
   Future<void> saveProfile(Profile profile) async {
-    print('MockDataService: Saving profile...');
-    print('MockDataService: Profile ageGroup: ${profile.ageGroup}, hobbies: ${profile.hobbies}');
-    
     await Future.delayed(const Duration(seconds: 1));
     
     if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(profile: profile);
-      print('MockDataService: Profile saved successfully. User now has profile: ${_currentUser!.profile?.toJson()}');
-    } else {
-      print('MockDataService: ERROR - No current user to save profile to!');
     }
   }
 
   Future<void> updateDailyGoal(int dailyGoal) async {
-    print('MockDataService: Updating daily goal to $dailyGoal...');
-    
     await Future.delayed(const Duration(milliseconds: 500));
     
     if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(dailyGoal: dailyGoal);
-      print('MockDataService: Daily goal updated successfully to ${_currentUser!.dailyGoal}');
     } else {
-      print('MockDataService: ERROR - No current user to update daily goal!');
       throw Exception('No current user to update daily goal');
     }
   }
@@ -127,12 +114,47 @@ class MockDataService {
   }
 
   Future<Level?> getLevel(String levelId) async {
+    print('MockDataService: Getting level $levelId');
     await Future.delayed(const Duration(milliseconds: 200));
     try {
-      return _levels.firstWhere((level) => level.id == levelId);
+      Level originalLevel = _levels.firstWhere((level) => level.id == levelId);
+      print('MockDataService: Found level ${originalLevel.name} with ${originalLevel.categories.length} categories');
+      
+      // パーソナライズ例文を考慮した例文数に更新（実際の例文は取得しない）
+      if (_currentUser?.profile != null) {
+        List<Category> updatedCategories = originalLevel.categories.map((category) {
+          // 各カテゴリーに+3例文（パーソナライズ例文の想定数）
+          int personalizedCount = _getPersonalizedExampleCount(category.id);
+          return category.copyWith(
+            totalExamples: category.totalExamples + personalizedCount,
+          );
+        }).toList();
+        
+        int totalExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.totalExamples);
+        int completedExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.completedExamples);
+        
+        print('MockDataService: Level updated with personalized counts');
+        
+        return originalLevel.copyWith(
+          categories: updatedCategories,
+          totalExamples: totalExamples,
+          completedExamples: completedExamples,
+        );
+      }
+      
+      return originalLevel;
     } catch (e) {
+      print('MockDataService: Error getting level $levelId: $e');
       return null;
     }
+  }
+  
+  // パーソナライズ例文の予想数を返す（実際には生成しない）
+  int _getPersonalizedExampleCount(String categoryId) {
+    // PersonalizationTemplateServiceで該当カテゴリーのテンプレート数を確認
+    List<ExampleTemplate> templates = PersonalizationTemplateService.getTemplatesForExistingCategory(categoryId);
+    // 最大3個まで生成される
+    return templates.length > 3 ? 3 : templates.length;
   }
 
   Future<Category> getCategory(String categoryId) async {
@@ -151,6 +173,47 @@ class MockDataService {
 
   Future<List<Example>> getExamples(String categoryId) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    
+    // パーソナライゼーション機能が有効な場合はパーソナライズ例文込みで返す
+    return await getPersonalizedExamples(categoryId);
+  }
+
+  /// パーソナライズ例文を含む例文リストを取得
+  Future<List<Example>> getPersonalizedExamples(String categoryId) async {
+    print('MockDataService: Getting personalized examples for category: $categoryId');
+    print('MockDataService: Current user profile: ${_currentUser?.profile != null ? "EXISTS" : "NULL"}');
+    
+    if (_currentUser?.profile != null) {
+      print('MockDataService: User occupation: ${_currentUser!.profile!.occupation}');
+      print('MockDataService: User hobbies: ${_currentUser!.profile!.hobbies}');
+      print('MockDataService: User family: ${_currentUser!.profile!.familyStructure}');
+    }
+    
+    try {
+      // まず基本例文を直接取得（循環参照回避）
+      List<Example> baseExamples = await getBaseExamples(categoryId);
+      print('MockDataService: Base examples count: ${baseExamples.length}');
+      
+      // パーソナライゼーションエンジンを使用して例文を混合
+      List<Example> examples = await _personalizationEngine.generateMixedExamples(
+        categoryId, 
+        _currentUser?.profile,
+        baseExamples
+      );
+      
+      print('MockDataService: Final examples count: ${examples.length} (difference: ${examples.length - baseExamples.length})');
+      return examples;
+    } catch (e) {
+      print('MockDataService: Error getting personalized examples: $e');
+      
+      // フォールバック：基本例文のみ返す
+      return await getBaseExamples(categoryId);
+    }
+  }
+
+  /// 基本例文のみを取得（パーソナライゼーション無し）
+  Future<List<Example>> getBaseExamples(String categoryId) async {
+    await Future.delayed(const Duration(milliseconds: 200));
     
     final category = await getCategory(categoryId);
     return category.examples;

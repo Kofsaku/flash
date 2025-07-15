@@ -36,7 +36,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     final profile = appProvider.currentUser?.profile;
     
     if (profile != null) {
-      print('Step4: Loading existing profile data');
+      // Loading existing profile data
       setState(() {
         _selectedRegion = profile.region;
         _selectedFamilyStructure = profile.familyStructure;
@@ -248,7 +248,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -299,7 +299,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -370,7 +370,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
         .where((text) => text.isNotEmpty)
         .toList();
     
-    print('Step4: Saving profile with region: $_selectedRegion, familyStructure: $_selectedFamilyStructure, topics: $interestingTopics');
+    // Saving profile data
     
     final updatedProfile = currentProfile?.copyWith(
       region: _selectedRegion,

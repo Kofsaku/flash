@@ -31,7 +31,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
     final profile = appProvider.currentUser?.profile;
     
     if (profile != null) {
-      print('Step2: Loading existing profile data');
+      // Loading existing profile data
       setState(() {
         _selectedHobbies.clear();
         _selectedHobbies.addAll(profile.hobbies);
@@ -227,7 +227,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -279,7 +279,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -293,7 +293,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
     
-    print('Step2: Saving profile with hobbies: $_selectedHobbies, industry: $_selectedIndustry, lifestyle: $_selectedLifestyle');
+    // Saving profile data
     
     final updatedProfile = currentProfile?.copyWith(
       hobbies: _selectedHobbies,

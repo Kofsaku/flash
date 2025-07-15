@@ -22,9 +22,9 @@ class StudyScreen extends StatefulWidget {
 
   const StudyScreen.mixed({
     super.key,
-    required String levelId,
+    required this.levelId,
     this.initialIndex = 0,
-  }) : categoryId = '', levelId = levelId, isMixed = true, isAllLevels = false;
+  }) : categoryId = '', isMixed = true, isAllLevels = false;
 
   const StudyScreen.allLevels({
     super.key,
@@ -394,7 +394,7 @@ class _StudyScreenState extends State<StudyScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(_showEnglish ? 0.15 : 0.1),
+                  color: Colors.black.withValues(alpha: _showEnglish ? 0.15 : 0.1),
                   blurRadius: _showEnglish ? 25 : 20,
                   offset: const Offset(0, 10),
                 ),
@@ -594,7 +594,7 @@ class _StudyScreenState extends State<StudyScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -667,6 +667,7 @@ class _StudyScreenState extends State<StudyScreen> {
     });
     
     if (isCompleted) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -691,6 +692,7 @@ class _StudyScreenState extends State<StudyScreen> {
         _finishStudy();
       }
     } else {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -719,6 +721,7 @@ class _StudyScreenState extends State<StudyScreen> {
       _examples[_currentIndex] = example.copyWith(isFavorite: !example.isFavorite);
     });
     
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -772,10 +775,13 @@ class _StudyScreenState extends State<StudyScreen> {
     final level = await appProvider.getLevel(currentLevelId);
     if (level == null) return;
     
+    // ignore: use_build_context_synchronously
     showModalBottomSheet(
+      // ignore: use_build_context_synchronously
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // ignore: use_build_context_synchronously
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
@@ -843,7 +849,7 @@ class _StudyScreenState extends State<StudyScreen> {
                           boxShadow: [
                             if (isSelected)
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),

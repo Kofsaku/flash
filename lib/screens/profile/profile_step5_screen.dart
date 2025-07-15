@@ -40,7 +40,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
     final profile = appProvider.currentUser?.profile;
     
     if (profile != null) {
-      print('Step5: Loading existing profile data');
+      // Loading existing profile data
       setState(() {
         _selectedLearningStyles.clear();
         _selectedLearningStyles.addAll(profile.learningStyles);
@@ -341,7 +341,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -393,7 +393,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -466,7 +466,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -490,7 +490,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
     
-    print('Step5: Saving final profile with learningStyles: $_selectedLearningStyles, skillLevels: $_skillLevels');
+    // Saving final profile data
     
     // Create updated profile with learning characteristics
     final updatedProfile = currentProfile?.copyWith(

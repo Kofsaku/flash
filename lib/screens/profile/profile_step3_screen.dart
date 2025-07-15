@@ -32,7 +32,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
     final profile = appProvider.currentUser?.profile;
     
     if (profile != null) {
-      print('Step3: Loading existing profile data');
+      // Loading existing profile data
       setState(() {
         _selectedLearningGoal = profile.learningGoal;
         _selectedStudyTimes.clear();
@@ -238,7 +238,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -289,7 +289,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -303,7 +303,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
     
-    print('Step3: Saving profile with learningGoal: $_selectedLearningGoal, studyTime: $_selectedStudyTimes, targetStudyMinutes: $_selectedTargetStudyMinutes');
+    // Saving profile data
     
     final updatedProfile = currentProfile?.copyWith(
       learningGoal: _selectedLearningGoal,

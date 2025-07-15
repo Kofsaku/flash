@@ -22,22 +22,16 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initialize() async {
     try {
-      print('Starting app initialization...');
       final appProvider = Provider.of<AppProvider>(context, listen: false);
-      print('Got app provider, calling initialize...');
       await appProvider.initialize();
-      print('Initialize completed, waiting 2 seconds...');
       
       await Future.delayed(const Duration(seconds: 2));
-      print('Wait completed, navigating to login...');
       
       if (mounted) {
         // ダミーデータなので常にログイン画面に遷移
         context.go(AppRouter.login);
-        print('Navigation to login attempted');
       }
     } catch (e) {
-      print('Initialization error: $e');
       if (mounted) {
         context.go(AppRouter.login);
       }

@@ -222,7 +222,7 @@ class CategoryStatistics extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

@@ -140,7 +140,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 onSelected: (_) => setState(() => _filterLevel = level.id),
                 selectedColor: Colors.blue[100],
               ),
-            )).toList(),
+            )),
           ],
         ),
       ),
@@ -355,6 +355,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       _favoriteExamples.removeWhere((e) => e.id == example.id);
     });
     
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('お気に入りから削除しました'),

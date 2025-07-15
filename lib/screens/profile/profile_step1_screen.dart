@@ -31,7 +31,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
     final profile = appProvider.currentUser?.profile;
     
     if (profile != null) {
-      print('Step1: Loading existing profile data');
+      // Loading existing profile data
       setState(() {
         _selectedAgeGroup = profile.ageGroup;
         _selectedOccupation = profile.occupation;
@@ -187,7 +187,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
             activeColor: Colors.blue[600],
             contentPadding: EdgeInsets.zero,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -201,7 +201,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
     
-    print('Step1: Saving profile with ageGroup: $_selectedAgeGroup, occupation: $_selectedOccupation, englishLevel: $_selectedEnglishLevel');
+    // Saving profile data
     
     final updatedProfile = currentProfile?.copyWith(
       ageGroup: _selectedAgeGroup,

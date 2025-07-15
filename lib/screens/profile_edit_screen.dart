@@ -62,8 +62,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
     final user = appProvider.currentUser;
     final profile = user?.profile;
     
-    print('ProfileEdit: Loading profile: ${profile?.toJson()}');
-    
     // Load user account data
     if (user != null) {
       _nameController.text = user.name;
@@ -92,21 +90,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
         _selectedWeakAreas = List.from(profile.weakAreas);
         _motivationDetail = profile.motivationDetail;
       });
-      print('ProfileEdit: Profile loaded successfully');
-    } else {
-      print('ProfileEdit: No profile found');
     }
   }
 
   Future<void> _saveProfile() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    
-    print('ProfileEdit: Saving user info and profile...');
-    print('  - Name: ${_nameController.text}');
-    print('  - Email: ${_emailController.text}');
-    print('  - Age: $_selectedAgeGroup');
-    print('  - Occupation: $_selectedOccupation');
-    print('  - English Level: $_selectedEnglishLevel');
     
     try {
       // Update user info first
@@ -463,6 +451,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
                       currentPasswordController.dispose();
                       newPasswordController.dispose();
                       confirmPasswordController.dispose();
+                      // ignore: use_build_context_synchronously
                       Navigator.pop(context);
                     }
                   },
@@ -535,7 +524,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'Debug: 年齢=${_selectedAgeGroup}, 職業=${_selectedOccupation}, レベル=${_selectedEnglishLevel}',
+              'Debug: 年齢=$_selectedAgeGroup, 職業=$_selectedOccupation, レベル=$_selectedEnglishLevel',
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ),
@@ -965,7 +954,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
                 const SizedBox(height: 8),
               ],
             );
-          }).toList(),
+          }),
           
           const SizedBox(height: 16),
           const Text('学習環境', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),

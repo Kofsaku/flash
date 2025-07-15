@@ -110,9 +110,7 @@ class Profile {
     this.motivationDetail,
     this.correctionStyle,
     this.encouragementFrequency,
-  }) {
-    print('Profile: Constructor called with ageGroup: $ageGroup, occupation: $occupation, englishLevel: $englishLevel');
-  }
+  });
 
   Profile copyWith({
     String? ageGroup,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 
@@ -266,7 +265,7 @@ class _DailyGoalSettingScreenState extends State<DailyGoalSettingScreen> {
             ),
             boxShadow: isSelected ? [
               BoxShadow(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 spreadRadius: 1,
                 blurRadius: 3,
                 offset: const Offset(0, 2),
@@ -309,7 +308,7 @@ class _DailyGoalSettingScreenState extends State<DailyGoalSettingScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '約${estimatedMinutes}分 ${_getGoalDescription(goal)}',
+                      '約$estimatedMinutes分 ${_getGoalDescription(goal)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],

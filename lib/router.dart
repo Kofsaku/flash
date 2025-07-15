@@ -112,9 +112,7 @@ class AppRouter {
         ShellRoute(
           builder: (context, state, child) {
             final location = state.fullPath ?? state.matchedLocation;
-            final uri = state.uri.toString();
             final queryParams = state.uri.queryParameters;
-            print('Debug: Full path = ${state.fullPath}, Matched location = ${state.matchedLocation}, URI = $uri, Query params = $queryParams');
             return MainLayout(
               currentIndex: _getCurrentIndex(location, queryParams),
               child: child,
@@ -124,10 +122,7 @@ class AppRouter {
             GoRoute(
               path: home,
               name: 'home',
-              builder: (context, state) {
-                print('Debug: Home route built with query params: ${state.uri.queryParameters}');
-                return const HomeScreen();
-              },
+              builder: (context, state) => const HomeScreen(),
             ),
             GoRoute(
               path: favorites,
@@ -206,15 +201,9 @@ class AppRouter {
         final profile = appProvider.currentUser?.profile;
         final hasValidProfile = _hasValidProfile(profile);
         
-        print('Router: isAuthenticated = $isAuthenticated, hasValidProfile = $hasValidProfile');
-        if (profile != null) {
-          print('Router: Profile ageGroup = ${profile.ageGroup}, industry = ${profile.industry}');
-        }
-        
         final isOnAuthPages = [login, register, registerProfile].contains(state.matchedLocation);
         final isOnProfilePages = [profileStep1, profileStep2, profileStep3, profileStep4, profileStep5, quickStart].contains(state.matchedLocation);
         final isOnSplash = state.matchedLocation == splash;
-        final isOnLoading = state.matchedLocation == loading;
         final isOnError = state.matchedLocation == error;
 
         if (isOnError) {
@@ -233,7 +222,6 @@ class AppRouter {
         // Existing users should go directly to home
 
         if (isAuthenticated && hasValidProfile && (isOnAuthPages || isOnProfilePages)) {
-          print('Router: Redirecting to home (valid profile exists)');
           return home;
         }
 
@@ -244,7 +232,6 @@ class AppRouter {
 
   static bool _hasValidProfile(Profile? profile) {
     if (profile == null) {
-      print('Router: Profile is null - returning false');
       return false;
     }
     
@@ -253,21 +240,12 @@ class AppRouter {
                         profile.occupation?.isNotEmpty == true &&
                         profile.englishLevel?.isNotEmpty == true;
     
-    print('Router: Profile validity check:');
-    print('  - ageGroup: "${profile.ageGroup}" (valid: ${profile.ageGroup?.isNotEmpty == true})');
-    print('  - occupation: "${profile.occupation}" (valid: ${profile.occupation?.isNotEmpty == true})');
-    print('  - englishLevel: "${profile.englishLevel}" (valid: ${profile.englishLevel?.isNotEmpty == true})');
-    print('  - hasBasicInfo = $hasBasicInfo');
-    
     return hasBasicInfo;
   }
 
   static int _getCurrentIndex(String location, Map<String, String> queryParams) {
-    print('Debug: Current location = $location, Query params = $queryParams'); // デバッグ用
-    
     // 学習タブからのホーム遷移の場合
     if (queryParams['tab'] == 'study') {
-      print('Debug: Study tab detected via query param, returning index 1');
       return 1;
     }
     // カテゴリー、例文一覧は学習タブ
@@ -278,7 +256,6 @@ class AppRouter {
     if (location.startsWith(favorites)) return 2;
     if (location.startsWith(profile)) return 3;
     
-    print('Debug: Returning default index 0');
     return 0; // Default to home
   }
 }

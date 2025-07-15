@@ -78,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -188,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -217,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: day['completed'] > 0
-                            ? Colors.blue.withOpacity(day['completed'] / 20)
+                            ? Colors.blue.withValues(alpha: day['completed'] / 20)
                             : Colors.grey[100],
                         shape: BoxShape.circle,
                         border: Border.all(
@@ -303,9 +303,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
-          if (category?.examples == null) continue;
+          if (category.examples.isEmpty) continue;
           
-          final completedExamples = category.examples.where((e) => e?.isCompleted == true).length;
+          final completedExamples = category.examples.where((e) => e.isCompleted == true).length;
           final totalExamples = category.examples.length;
           final accuracy = _getCategoryAccuracy(category);
           
@@ -313,8 +313,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if ((accuracy < 70 && completedExamples > 0) || 
               (totalExamples > 0 && completedExamples / totalExamples < 0.5)) {
             weakCategories.add({
-              'id': category.id ?? '',
-              'name': category.name ?? 'Unknown',
+              'id': category.id,
+              'name': category.name,
               'accuracyRate': accuracy,
               'completionRate': totalExamples > 0 ? (completedExamples / totalExamples * 100).toInt() : 0,
               'priority': accuracy < 50 ? 'high' : 'medium',
@@ -326,20 +326,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 正解率の低い順にソート
       weakCategories.sort((a, b) => (a['accuracyRate'] as int).compareTo(b['accuracyRate'] as int));
     } catch (e) {
-      print('Error in _getWeakCategories: $e');
+      // Error occurred while calculating weak categories
     }
     
     return weakCategories;
   }
   
   int _getCategoryAccuracy(dynamic category) {
-    if (category?.examples == null) return 100;
+    if (category.examples == null || category.examples.isEmpty) return 100;
     
-    final completedExamples = category.examples.where((e) => e?.isCompleted == true).toList();
+    final completedExamples = category.examples.where((e) => e.isCompleted == true);
     if (completedExamples.isEmpty) return 100; // 未学習の場合は100%として扱う
     
     // モックデータとして、カテゴリー名に基づいて正解率を計算
-    final hash = (category.name ?? '').hashCode;
+    final hash = category.name.hashCode;
     return 60 + (hash.abs() % 30); // 60-89%の範囲でランダムな正解率
   }
   
@@ -402,7 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      print('Error in _getRecommendations: $e');
+      // Error occurred while getting recommendations
     }
     
     return recommendations;
@@ -414,17 +414,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
-          if (category?.examples == null) continue;
+          if (category.examples.isEmpty) continue;
           
-          final completedExamples = category.examples.where((e) => e?.isCompleted == true).length;
+          final completedExamples = category.examples.where((e) => e.isCompleted == true).length;
           final totalExamples = category.examples.length;
           final completionRate = totalExamples > 0 ? (completedExamples / totalExamples * 100).toInt() : 0;
           
           // 未完了条件: 完了率が80%以下で、1つ以上は完了している
           if (completionRate < 80 && completedExamples > 0) {
             incomplete.add({
-              'id': category.id ?? '',
-              'name': category.name ?? 'Unknown',
+              'id': category.id,
+              'name': category.name,
               'completionRate': completionRate,
             });
           }
@@ -434,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 完了率の高い順にソート（続けやすいものから）
       incomplete.sort((a, b) => (b['completionRate'] as int).compareTo(a['completionRate'] as int));
     } catch (e) {
-      print('Error in _getIncompleteCategories: $e');
+      // Error occurred while getting incomplete categories
     }
     
     return incomplete;
@@ -446,14 +446,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
-          if (category?.examples == null) continue;
+          if (category.examples.isEmpty) continue;
           
-          final favoriteCount = category.examples.where((e) => e?.isFavorite == true).length;
+          final favoriteCount = category.examples.where((e) => e.isFavorite == true).length;
           if (favoriteCount > 0) {
-            final categoryId = category.id ?? '';
+            final categoryId = category.id;
             favoriteCounts[categoryId] = {
               'id': categoryId,
-              'name': category.name ?? 'Unknown',
+              'name': category.name,
               'count': favoriteCount,
             };
           }
@@ -465,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       
       return result;
     } catch (e) {
-      print('Error in _getFavoriteCategories: $e');
+      // Error occurred while getting favorite categories
       return [];
     }
   }
@@ -478,7 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -530,7 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -600,7 +600,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -691,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -724,10 +724,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: recommendation['color'].withOpacity(0.1),
+                    color: recommendation['color'].withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: recommendation['color'].withOpacity(0.3),
+                      color: recommendation['color'].withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -736,7 +736,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: recommendation['color'].withOpacity(0.2),
+                          color: recommendation['color'].withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -771,7 +771,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Icon(
                         Icons.arrow_forward_ios,
-                        color: recommendation['color'].withOpacity(0.7),
+                        color: recommendation['color'].withValues(alpha: 0.7),
                         size: 16,
                       ),
                     ],
@@ -789,10 +789,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     int total = 0;
     try {
       for (final level in appProvider.levels) {
-        total += level.completedExamples ?? 0;
+        total += level.completedExamples;
       }
     } catch (e) {
-      print('Error in _getTotalCompleted: $e');
+      // Error occurred while calculating total completed
     }
     return total;
   }
@@ -802,13 +802,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
-          if (category?.examples != null) {
-            total += category.examples.where((e) => e?.isFavorite == true).length;
+          if (category.examples.isNotEmpty) {
+            total += category.examples.where((e) => e.isFavorite == true).length;
           }
         }
       }
     } catch (e) {
-      print('Error in _getTotalFavorites: $e');
+      // Error occurred while calculating total favorites
     }
     return total;
   }
@@ -817,10 +817,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     int total = 0;
     try {
       for (final level in appProvider.levels) {
-        total += level.totalExamples ?? 0;
+        total += level.totalExamples;
       }
     } catch (e) {
-      print('Error in _getTotalExamples: $e');
+      // Error occurred while calculating total examples
     }
     return total;
   }

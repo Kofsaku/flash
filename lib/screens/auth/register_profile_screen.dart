@@ -22,27 +22,27 @@ class _RegisterProfileScreenState extends State<RegisterProfileScreen> {
   String? _selectedEnglishLevel;
   
   // Step 2: Interests
-  List<String> _selectedHobbies = [];
+  final List<String> _selectedHobbies = [];
   String? _selectedIndustry;
-  List<String> _selectedLifestyle = [];
+  final List<String> _selectedLifestyle = [];
   
   // Step 3: Learning goals
   String? _selectedLearningGoal;
-  List<String> _selectedStudyTime = [];
+  final List<String> _selectedStudyTime = [];
   String? _targetStudyMinutes;
-  List<String> _selectedChallenges = [];
+  final List<String> _selectedChallenges = [];
   
   // Step 4: Context
   String? _selectedRegion;
   String? _selectedFamilyStructure;
-  List<String> _selectedEnglishUsageScenarios = [];
-  List<String> _selectedInterestingTopics = [];
+  final List<String> _selectedEnglishUsageScenarios = [];
+  final List<String> _selectedInterestingTopics = [];
   
   // Step 5: Learning style
-  List<String> _selectedLearningStyles = [];
-  Map<String, String> _skillLevels = {};
-  List<String> _selectedStudyEnvironments = [];
-  List<String> _selectedWeakAreas = [];
+  final List<String> _selectedLearningStyles = [];
+  final Map<String, String> _skillLevels = {};
+  final List<String> _selectedStudyEnvironments = [];
+  final List<String> _selectedWeakAreas = [];
   String? _motivationDetail;
 
   @override
@@ -665,7 +665,7 @@ class _RegisterProfileScreenState extends State<RegisterProfileScreen> {
                 const SizedBox(height: 8),
               ],
             );
-          }).toList(),
+          }),
           
           const SizedBox(height: 16),
           const Text('学習環境', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
