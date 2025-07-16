@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../providers/firebase_auth_provider.dart';
 import '../../models/user.dart';
 import '../../router.dart';
 import '../../widgets/progress_indicator.dart';
+import '../../widgets/app_drawer.dart';
 
 class ProfileStep5Screen extends StatefulWidget {
   const ProfileStep5Screen({super.key});
@@ -38,22 +40,22 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
   void _loadExistingProfile() {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final profile = appProvider.currentUser?.profile;
-    
+
     if (profile != null) {
       // Loading existing profile data
       setState(() {
         _selectedLearningStyles.clear();
         _selectedLearningStyles.addAll(profile.learningStyles);
-        
+
         _skillLevels.clear();
         _skillLevels.addAll(profile.skillLevels);
-        
+
         _selectedStudyEnvironments.clear();
         _selectedStudyEnvironments.addAll(profile.studyEnvironments);
-        
+
         _selectedWeakAreas.clear();
         _selectedWeakAreas.addAll(profile.weakAreas);
-        
+
         _selectedMotivationDetail = profile.motivationDetail;
         _selectedCorrectionStyle = profile.correctionStyle;
         _selectedEncouragementFrequency = profile.encouragementFrequency;
@@ -120,17 +122,15 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
+      drawer: const AppDrawer(),
       body: SafeArea(
-        child: Consumer<AppProvider>(
-          builder: (context, appProvider, child) {
+        child: Consumer<FirebaseAuthProvider>(
+          builder: (context, authProvider, child) {
             return Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  const StepProgressIndicator(
-                    currentStep: 5,
-                    totalSteps: 5,
-                  ),
+                  const StepProgressIndicator(currentStep: 5, totalSteps: 5),
                   const SizedBox(height: 32),
                   Expanded(
                     child: SingleChildScrollView(
@@ -149,10 +149,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                           const SizedBox(height: 8),
                           const Text(
                             'あなたの学習スタイルを診断します。\nより効果的な学習方法を提案します。\n（すべて任意項目です）',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 32),
                           _buildCheckboxSection(
@@ -210,7 +207,9 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                             '任意',
                             _motivationDetails,
                             _selectedMotivationDetail,
-                            (value) => setState(() => _selectedMotivationDetail = value),
+                            (value) => setState(
+                              () => _selectedMotivationDetail = value,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           _buildRadioSection(
@@ -218,7 +217,9 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                             '任意',
                             _correctionStyles,
                             _selectedCorrectionStyle,
-                            (value) => setState(() => _selectedCorrectionStyle = value),
+                            (value) => setState(
+                              () => _selectedCorrectionStyle = value,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           _buildRadioSection(
@@ -226,7 +227,9 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                             '任意',
                             _encouragementFrequencies,
                             _selectedEncouragementFrequency,
-                            (value) => setState(() => _selectedEncouragementFrequency = value),
+                            (value) => setState(
+                              () => _selectedEncouragementFrequency = value,
+                            ),
                           ),
                         ],
                       ),
@@ -258,7 +261,8 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: appProvider.isLoading ? null : _handleComplete,
+                          onPressed:
+                              authProvider.isLoading ? null : _handleComplete,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue[600],
                             foregroundColor: Colors.white,
@@ -266,22 +270,25 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: appProvider.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          child:
+                              authProvider.isLoading
+                                  ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : const Text(
+                                    '完了',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                )
-                              : const Text(
-                                  '完了',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                     ],
@@ -309,10 +316,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -360,10 +364,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -406,10 +407,7 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
           children: [
             const Text(
               'スキル別自己評価',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -445,23 +443,27 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
                 ),
                 const SizedBox(height: 8),
                 Wrap(
-                  children: _skillLevelOptions.map((level) {
-                    return SizedBox(
-                      width: 120,
-                      child: RadioListTile<String>(
-                        title: Text(level, style: const TextStyle(fontSize: 12)),
-                        value: level,
-                        groupValue: _skillLevels[skill],
-                        onChanged: (value) {
-                          setState(() {
-                            _skillLevels[skill] = value ?? '';
-                          });
-                        },
-                        activeColor: Colors.blue[600],
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    );
-                  }).toList(),
+                  children:
+                      _skillLevelOptions.map((level) {
+                        return SizedBox(
+                          width: 120,
+                          child: RadioListTile<String>(
+                            title: Text(
+                              level,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            value: level,
+                            groupValue: _skillLevels[skill],
+                            onChanged: (value) {
+                              setState(() {
+                                _skillLevels[skill] = value ?? '';
+                              });
+                            },
+                            activeColor: Colors.blue[600],
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        );
+                      }).toList(),
                 ),
               ],
             ),
@@ -487,38 +489,45 @@ class _ProfileStep5ScreenState extends State<ProfileStep5Screen> {
   }
 
   void _handleComplete() async {
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final currentProfile = appProvider.currentUser?.profile;
-    
-    // Saving final profile data
-    
-    // Create updated profile with learning characteristics
-    final updatedProfile = currentProfile?.copyWith(
-      learningStyles: _selectedLearningStyles,
-      skillLevels: _skillLevels,
-      studyEnvironments: _selectedStudyEnvironments,
-      weakAreas: _selectedWeakAreas,
-      motivationDetail: _selectedMotivationDetail,
-      correctionStyle: _selectedCorrectionStyle,
-      encouragementFrequency: _selectedEncouragementFrequency,
-    ) ?? Profile(
-      learningStyles: _selectedLearningStyles,
-      skillLevels: _skillLevels,
-      studyEnvironments: _selectedStudyEnvironments,
-      weakAreas: _selectedWeakAreas,
-      motivationDetail: _selectedMotivationDetail,
-      correctionStyle: _selectedCorrectionStyle,
-      encouragementFrequency: _selectedEncouragementFrequency,
+    final authProvider = Provider.of<FirebaseAuthProvider>(
+      context,
+      listen: false,
     );
-    
-    final success = await appProvider.saveProfile(updatedProfile);
-    
+    final currentProfile = authProvider.currentUser?.profile;
+
+    // Saving final profile data
+
+    // Create updated profile with learning characteristics
+    final updatedProfile =
+        currentProfile?.copyWith(
+          learningStyles: _selectedLearningStyles,
+          skillLevels: _skillLevels,
+          studyEnvironments: _selectedStudyEnvironments,
+          weakAreas: _selectedWeakAreas,
+          motivationDetail: _selectedMotivationDetail,
+          correctionStyle: _selectedCorrectionStyle,
+          encouragementFrequency: _selectedEncouragementFrequency,
+          isCompleted: true,
+        ) ??
+        Profile(
+          learningStyles: _selectedLearningStyles,
+          skillLevels: _skillLevels,
+          studyEnvironments: _selectedStudyEnvironments,
+          weakAreas: _selectedWeakAreas,
+          motivationDetail: _selectedMotivationDetail,
+          correctionStyle: _selectedCorrectionStyle,
+          encouragementFrequency: _selectedEncouragementFrequency,
+          isCompleted: true,
+        );
+
+    final success = await authProvider.saveProfile(updatedProfile);
+
     if (success && mounted) {
-      context.go(AppRouter.loading);
-    } else if (appProvider.errorMessage != null && mounted) {
+      context.go(AppRouter.home);
+    } else if (authProvider.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(appProvider.errorMessage!),
+          content: Text(authProvider.errorMessage!),
           backgroundColor: Colors.red,
         ),
       );

@@ -153,7 +153,8 @@ class AppRouter {
               path: exampleList,
               name: 'exampleList',
               builder: (context, state) {
-                final categoryId = state.uri.queryParameters['categoryId'] ?? '';
+                final categoryId =
+                    state.uri.queryParameters['categoryId'] ?? '';
                 return ExampleListScreen(categoryId: categoryId);
               },
             ),
@@ -167,14 +168,21 @@ class AppRouter {
             final levelId = state.uri.queryParameters['levelId'] ?? '';
             final mixed = state.uri.queryParameters['mixed'] == 'true';
             final allLevels = state.uri.queryParameters['allLevels'] == 'true';
-            final exampleIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
-            
+            final exampleIndex =
+                int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
+
             if (allLevels) {
               return StudyScreen.allLevels(initialIndex: exampleIndex);
             } else if (mixed && levelId.isNotEmpty) {
-              return StudyScreen.mixed(levelId: levelId, initialIndex: exampleIndex);
+              return StudyScreen.mixed(
+                levelId: levelId,
+                initialIndex: exampleIndex,
+              );
             } else {
-              return StudyScreen(categoryId: categoryId, initialIndex: exampleIndex);
+              return StudyScreen(
+                categoryId: categoryId,
+                initialIndex: exampleIndex,
+              );
             }
           },
         ),
@@ -182,46 +190,78 @@ class AppRouter {
           path: error,
           name: 'error',
           builder: (context, state) {
-            final message = state.uri.queryParameters['message'] ?? 'An error occurred';
+            final message =
+                state.uri.queryParameters['message'] ?? 'An error occurred';
             return ErrorScreen(message: message);
           },
         ),
       ],
       redirect: (BuildContext context, GoRouterState state) {
-        final authProvider = Provider.of<FirebaseAuthProvider>(context, listen: false);
-        final isAuthenticated = authProvider.isAuthenticated;
-        final profile = authProvider.currentUser?.profile;
-        final hasValidProfile = _hasValidProfile(profile);
-        final isFirstTimeUser = authProvider.isFirstTimeUser;
-        
-        final isOnAuthPages = [login].contains(state.matchedLocation);
-        final isOnProfilePages = [profileSetup, profileStep1, profileStep2, profileStep3, profileStep4, profileStep5, quickStart].contains(state.matchedLocation);
-        final isOnSplash = state.matchedLocation == splash;
-        final isOnError = state.matchedLocation == error;
+        try {
+          final authProvider = Provider.of<FirebaseAuthProvider>(
+            context,
+            listen: false,
+          );
+          final isAuthenticated = authProvider.isAuthenticated;
+          final currentUser = authProvider.currentUser;
+          final profile = currentUser?.profile;
+          final hasValidProfile = _hasValidProfile(profile);
+          final isLoading = authProvider.isLoading;
 
-        if (isOnError) {
+          final isOnAuthPages = [login].contains(state.matchedLocation);
+          final isOnProfilePages = [
+            profileSetup,
+            profileStep1,
+            profileStep2,
+            profileStep3,
+            profileStep4,
+            profileStep5,
+            quickStart,
+          ].contains(state.matchedLocation);
+          final isOnSplash = state.matchedLocation == splash;
+          final isOnError = state.matchedLocation == error;
+          final isOnProfileEdit = state.matchedLocation == profileEdit;
+
+          // デバッグ用ログ
+          print(
+            '🔄 Router Debug: path=${state.matchedLocation}, auth=$isAuthenticated, user=${currentUser?.email}, hasProfile=$hasValidProfile, loading=$isLoading',
+          );
+
+          // エラーページ、スプラッシュページ、プロフィール編集ページの場合はリダイレクトしない
+          if (isOnError || isOnSplash || isOnProfileEdit) {
+            return null;
+          }
+
+          // 認証処理中の場合はスプラッシュ画面を表示（ただしプロフィール編集中は除く）
+          if (isLoading && !isOnProfileEdit) {
+            return splash;
+          }
+
+          // 未認証の場合はログイン画面へ
+          if (!isAuthenticated && !isOnAuthPages) {
+            print('🔄 Redirecting to login: not authenticated');
+            return login;
+          }
+
+          // 認証済みでプロフィール未設定の場合、プロフィール設定画面へ（プロフィール編集中は除く）
+          if (isAuthenticated && !hasValidProfile && !isOnProfilePages && !isOnProfileEdit) {
+            print('🔄 Redirecting to profile setup: no valid profile');
+            return profileSetup;
+          }
+
+          // 認証済みでプロフィール設定済みの場合、認証ページやプロフィール設定ページからホームへ
+          if (isAuthenticated &&
+              hasValidProfile &&
+              (isOnAuthPages || isOnProfilePages)) {
+            print('🔄 Redirecting to home: profile completed');
+            return home;
+          }
+
           return null;
+        } catch (e) {
+          print('🔄 Router Error: $e');
+          return splash;
         }
-
-        if (isOnSplash) {
-          return null;
-        }
-
-        if (!isAuthenticated && !isOnAuthPages) {
-          return login;
-        }
-
-        // 初回ユーザーまたはプロフィールが未設定の場合、プロフィール設定画面へ
-        if (isAuthenticated && (isFirstTimeUser || !hasValidProfile) && !isOnProfilePages) {
-          return profileSetup;
-        }
-
-        // 認証済みでプロフィールが設定済みの場合、認証ページやプロフィール設定ページからホームへ
-        if (isAuthenticated && hasValidProfile && (isOnAuthPages || isOnProfilePages)) {
-          return home;
-        }
-
-        return null;
       },
     );
   }
@@ -230,16 +270,19 @@ class AppRouter {
     if (profile == null) {
       return false;
     }
-    
-    // Check if basic required fields are present
-    final hasBasicInfo = profile.ageGroup?.isNotEmpty == true &&
-                        profile.occupation?.isNotEmpty == true &&
-                        profile.englishLevel?.isNotEmpty == true;
-    
-    return hasBasicInfo;
+
+    // Check if profile setup is completed
+    final isCompleted = profile.isCompleted;
+    print(
+      '🔄 Profile Check: isCompleted=$isCompleted, occupation=${profile.occupation}, englishLevel=${profile.englishLevel}',
+    );
+    return isCompleted;
   }
 
-  static int _getCurrentIndex(String location, Map<String, String> queryParams) {
+  static int _getCurrentIndex(
+    String location,
+    Map<String, String> queryParams,
+  ) {
     // 学習タブからのホーム遷移の場合
     if (queryParams['tab'] == 'study') {
       return 1;
@@ -251,7 +294,7 @@ class AppRouter {
     if (location.startsWith(home)) return 0;
     if (location.startsWith(favorites)) return 2;
     if (location.startsWith(profile)) return 3;
-    
+
     return 0; // Default to home
   }
 }

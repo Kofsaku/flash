@@ -57,15 +57,19 @@ class ExampleTemplate {
       categoryId: json['categoryId'],
       grammarFocus: List<String>.from(json['grammarFocus'] ?? []),
       variables: Map<String, Map<String, Map<String, dynamic>>>.from(
-        json['variables']?.map((key, value) => MapEntry(
-          key,
-          Map<String, Map<String, dynamic>>.from(
-            value?.map((k, v) => MapEntry(
-              k,
-              Map<String, dynamic>.from(v ?? {})
-            )) ?? {}
-          )
-        )) ?? {}
+        json['variables']?.map(
+              (key, value) => MapEntry(
+                key,
+                Map<String, Map<String, dynamic>>.from(
+                  value?.map(
+                        (k, v) =>
+                            MapEntry(k, Map<String, dynamic>.from(v ?? {})),
+                      ) ??
+                      {},
+                ),
+              ),
+            ) ??
+            {},
       ),
       difficultyLevel: json['difficultyLevel'] ?? 'intermediate',
     );
@@ -141,7 +145,9 @@ class PersonalizedExample {
       categoryId: json['categoryId'],
       levelId: json['levelId'],
       templateId: json['templateId'],
-      appliedVariables: Map<String, String>.from(json['appliedVariables'] ?? {}),
+      appliedVariables: Map<String, String>.from(
+        json['appliedVariables'] ?? {},
+      ),
       isPersonalized: json['isPersonalized'] ?? true,
       order: json['order'],
     );

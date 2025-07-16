@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../providers/firebase_auth_provider.dart';
 import '../models/level.dart';
 import '../router.dart';
 import '../widgets/app_drawer.dart';
@@ -33,11 +34,12 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'メニュー',
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'メニュー',
+              ),
         ),
         actions: [
           IconButton(
@@ -54,9 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           if (appProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (appProvider.errorMessage != null) {
@@ -64,11 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
                     'エラーが発生しました',
@@ -123,16 +119,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final level = appProvider.levels[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: _buildLevelCard(level),
-                      );
-                    },
-                    childCount: appProvider.levels.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final level = appProvider.levels[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: _buildLevelCard(level),
+                    );
+                  }, childCount: appProvider.levels.length),
                 ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 100), // Bottom padding
@@ -146,7 +142,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWelcomeSection(AppProvider appProvider) {
-    final user = appProvider.currentUser;
+    final authProvider = Provider.of<FirebaseAuthProvider>(
+      context,
+      listen: false,
+    );
+    final user = authProvider.currentUser;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'こんにちは、${user?.name ?? 'ゲスト'}さん！',
+            'こんにちは、${user?.name ?? 'ニックネームを設定してください'}！',
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -179,26 +179,16 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 8),
           const Text(
             'あなたに合わせた例文で英作文を練習しましょう',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white70,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.white70),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(
-                Icons.auto_awesome,
-                color: Colors.white,
-                size: 16,
-              ),
+              const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
               const SizedBox(width: 8),
               const Text(
                 'パーソナライズされた学習体験',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.white70),
               ),
             ],
           ),
@@ -207,15 +197,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
   Widget _buildLevelCard(Level level) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           context.go('${AppRouter.category}?levelId=${level.id}');
@@ -327,18 +313,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
-                    Icons.category,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
+                  Icon(Icons.category, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
                     '${level.categories.length}カテゴリー',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -348,7 +327,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   Color _getLevelColor(int order) {
     switch (order) {
@@ -400,11 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.quiz,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    Icon(Icons.quiz, color: Colors.white, size: 28),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -443,5 +417,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 }

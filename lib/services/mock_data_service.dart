@@ -11,10 +11,21 @@ class MockDataService {
 
   User? _currentUser;
   List<Level> _levels = [];
-  final LocalPersonalizationEngine _personalizationEngine = LocalPersonalizationEngine();
+  final LocalPersonalizationEngine _personalizationEngine =
+      LocalPersonalizationEngine();
 
   User? get currentUser => _currentUser;
   List<Level> get levels => _levels;
+
+  /// 現在のユーザーを設定（FirebaseAuth連携用）
+  void setCurrentUser(User? user) {
+    _currentUser = user;
+    if (user != null) {
+      print('💾 MockDataService: ユーザー設定完了 ${user.email}');
+    } else {
+      print('💾 MockDataService: ユーザークリア完了');
+    }
+  }
 
   Future<void> initialize() async {
     await Future.delayed(const Duration(milliseconds: 500));
@@ -23,7 +34,7 @@ class MockDataService {
 
   Future<User> login(String email, String password) async {
     await Future.delayed(const Duration(seconds: 1));
-    
+
     // Create a complete default profile for existing users
     final defaultProfile = Profile(
       ageGroup: '30代',
@@ -51,7 +62,7 @@ class MockDataService {
       weakAreas: ['語彙', '発音'],
       motivationDetail: 'キャリアアップのためにビジネス英語を習得したい',
     );
-    
+
     _currentUser = User(
       id: 'user_001',
       email: email,
@@ -59,13 +70,13 @@ class MockDataService {
       isAuthenticated: true,
       profile: defaultProfile,
     );
-    
+
     return _currentUser!;
   }
 
   Future<User> register(String email, String password, String name) async {
     await Future.delayed(const Duration(seconds: 1));
-    
+
     _currentUser = User(
       id: 'user_002',
       email: email,
@@ -73,18 +84,15 @@ class MockDataService {
       isAuthenticated: true,
       profile: null, // Explicitly set profile to null
     );
-    
+
     return _currentUser!;
   }
 
   Future<void> updateUserInfo(String name, String email) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     if (_currentUser != null) {
-      _currentUser = _currentUser!.copyWith(
-        name: name,
-        email: email,
-      );
+      _currentUser = _currentUser!.copyWith(name: name, email: email);
     } else {
       throw Exception('No current user to update');
     }
@@ -92,40 +100,100 @@ class MockDataService {
 
   Future<void> saveProfile(Profile profile) async {
     await Future.delayed(const Duration(seconds: 1));
-    
+
+    print('💾 MockDataService: プロファイル保存開始');
+    print('💾 現在のユーザー: ${_currentUser?.email}');
+    print('💾 保存するプロファイル: isCompleted=${profile.isCompleted}');
+
     if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(profile: profile);
+      print('💾 プロファイル保存完了: ${_currentUser!.profile?.isCompleted}');
+
+      // ローカルストレージに保存（シミュレート）
+      await _saveToLocalStorage();
+    } else {
+      print('💾 エラー: 現在のユーザーが見つかりません');
+      throw Exception('No current user to save profile');
+    }
+  }
+
+  Future<void> _saveToLocalStorage() async {
+    // 実際のアプリでは SharedPreferences や SQLite を使用
+    // ここではシミュレートのみ
+    print('💾 ローカルストレージに保存中...');
+    await Future.delayed(const Duration(milliseconds: 100));
+    print('💾 ローカルストレージ保存完了');
+  }
+
+  Future<void> loadProfileFromStorage() async {
+    print('💾 ローカルストレージからプロファイル読み込み開始');
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 実際のアプリでは保存されたデータを読み込む
+    // 既存ユーザーの場合、プロファイルが存在する可能性がある
+    if (_currentUser?.profile?.isCompleted == true) {
+      print('💾 完了済みプロファイルを発見: ${_currentUser!.email}');
+      print('💾 プロファイル詳細: ${_currentUser!.profile!.englishLevel}');
+    } else {
+      print('💾 完了済みプロファイルが見つかりません - 新規ユーザーまたは未完了');
+
+      // 既存ユーザーの場合はデフォルトの完了済みプロファイルを設定
+      if (_currentUser != null) {
+        _currentUser = _currentUser!.copyWith(
+          profile: Profile(
+            englishLevel: 'intermediate',
+            learningGoal: 'conversation',
+            isCompleted: true,
+          ),
+        );
+        print('💾 既存ユーザーのためのデフォルトプロファイルを設定');
+      }
     }
   }
 
   Future<void> updateDailyGoal(int dailyGoal) async {
     await Future.delayed(const Duration(milliseconds: 500));
+
+    print('📊 ========== MOCK DATA SERVICE UPDATE ==========');
+    print('📊 Input dailyGoal = $dailyGoal');
+    print('📊 _currentUser?.dailyGoal (before) = ${_currentUser?.dailyGoal}');
     
     if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(dailyGoal: dailyGoal);
+      print('📊 _currentUser?.dailyGoal (after) = ${_currentUser?.dailyGoal}');
     } else {
+      print('📊 ERROR: No current user to update daily goal');
       throw Exception('No current user to update daily goal');
     }
+    
+    print('📊 =======================================');
   }
 
   Future<List<Level>> getLevels() async {
     print('MockDataService: Getting all levels for home screen');
     await Future.delayed(const Duration(milliseconds: 300));
-    
+
     // パーソナライズ例文を考慮した例文数に更新
     if (_currentUser?.profile != null) {
       List<Level> updatedLevels = [];
       for (Level level in _levels) {
-        List<Category> updatedCategories = level.categories.map((category) {
-          int personalizedCount = _getPersonalizedExampleCount(category.id);
-          return category.copyWith(
-            totalExamples: category.totalExamples + personalizedCount,
-          );
-        }).toList();
-        
-        int totalExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.totalExamples);
-        int completedExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.completedExamples);
-        
+        List<Category> updatedCategories =
+            level.categories.map((category) {
+              int personalizedCount = _getPersonalizedExampleCount(category.id);
+              return category.copyWith(
+                totalExamples: category.totalExamples + personalizedCount,
+              );
+            }).toList();
+
+        int totalExamples = updatedCategories.fold(
+          0,
+          (sum, cat) => sum + cat.totalExamples,
+        );
+        int completedExamples = updatedCategories.fold(
+          0,
+          (sum, cat) => sum + cat.completedExamples,
+        );
+
         Level updatedLevel = level.copyWith(
           categories: updatedCategories,
           totalExamples: totalExamples,
@@ -133,11 +201,11 @@ class MockDataService {
         );
         updatedLevels.add(updatedLevel);
       }
-      
+
       print('MockDataService: Updated all levels with personalized counts');
       return updatedLevels;
     }
-    
+
     return _levels;
   }
 
@@ -146,48 +214,60 @@ class MockDataService {
     await Future.delayed(const Duration(milliseconds: 200));
     try {
       Level originalLevel = _levels.firstWhere((level) => level.id == levelId);
-      print('MockDataService: Found level ${originalLevel.name} with ${originalLevel.categories.length} categories');
-      
+      print(
+        'MockDataService: Found level ${originalLevel.name} with ${originalLevel.categories.length} categories',
+      );
+
       // パーソナライズ例文を考慮した例文数に更新（実際の例文は取得しない）
       if (_currentUser?.profile != null) {
-        List<Category> updatedCategories = originalLevel.categories.map((category) {
-          // 各カテゴリーに+3例文（パーソナライズ例文の想定数）
-          int personalizedCount = _getPersonalizedExampleCount(category.id);
-          return category.copyWith(
-            totalExamples: category.totalExamples + personalizedCount,
-          );
-        }).toList();
-        
-        int totalExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.totalExamples);
-        int completedExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.completedExamples);
-        
+        List<Category> updatedCategories =
+            originalLevel.categories.map((category) {
+              // 各カテゴリーに+3例文（パーソナライズ例文の想定数）
+              int personalizedCount = _getPersonalizedExampleCount(category.id);
+              return category.copyWith(
+                totalExamples: category.totalExamples + personalizedCount,
+              );
+            }).toList();
+
+        int totalExamples = updatedCategories.fold(
+          0,
+          (sum, cat) => sum + cat.totalExamples,
+        );
+        int completedExamples = updatedCategories.fold(
+          0,
+          (sum, cat) => sum + cat.completedExamples,
+        );
+
         print('MockDataService: Level updated with personalized counts');
-        
+
         return originalLevel.copyWith(
           categories: updatedCategories,
           totalExamples: totalExamples,
           completedExamples: completedExamples,
         );
       }
-      
+
       return originalLevel;
     } catch (e) {
       print('MockDataService: Error getting level $levelId: $e');
       return null;
     }
   }
-  
+
   // パーソナライズ例文の予想数を返す（実際には生成しない）
   int _getPersonalizedExampleCount(String categoryId) {
     // PersonalizationTemplateServiceで該当カテゴリーのテンプレート数を確認
-    List<ExampleTemplate> templates = PersonalizationTemplateService.getTemplatesForExistingCategory(categoryId);
+    List<ExampleTemplate> templates =
+        PersonalizationTemplateService.getTemplatesForExistingCategory(
+          categoryId,
+        );
     // 最大3個まで生成される
     return templates.length > 3 ? 3 : templates.length;
   }
 
   Future<Category> getCategory(String categoryId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    
+
     for (final level in _levels) {
       for (final category in level.categories) {
         if (category.id == categoryId) {
@@ -195,45 +275,56 @@ class MockDataService {
         }
       }
     }
-    
+
     throw Exception('Category not found');
   }
 
   Future<List<Example>> getExamples(String categoryId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    
+
     // パーソナライゼーション機能が有効な場合はパーソナライズ例文込みで返す
     return await getPersonalizedExamples(categoryId);
   }
 
   /// パーソナライズ例文を含む例文リストを取得
   Future<List<Example>> getPersonalizedExamples(String categoryId) async {
-    print('MockDataService: Getting personalized examples for category: $categoryId');
-    print('MockDataService: Current user profile: ${_currentUser?.profile != null ? "EXISTS" : "NULL"}');
-    
+    print(
+      'MockDataService: Getting personalized examples for category: $categoryId',
+    );
+    print(
+      'MockDataService: Current user profile: ${_currentUser?.profile != null ? "EXISTS" : "NULL"}',
+    );
+
     if (_currentUser?.profile != null) {
-      print('MockDataService: User occupation: ${_currentUser!.profile!.occupation}');
+      print(
+        'MockDataService: User occupation: ${_currentUser!.profile!.occupation}',
+      );
       print('MockDataService: User hobbies: ${_currentUser!.profile!.hobbies}');
-      print('MockDataService: User family: ${_currentUser!.profile!.familyStructure}');
+      print(
+        'MockDataService: User family: ${_currentUser!.profile!.familyStructure}',
+      );
     }
-    
+
     try {
       // まず基本例文を直接取得（循環参照回避）
       List<Example> baseExamples = await getBaseExamples(categoryId);
       print('MockDataService: Base examples count: ${baseExamples.length}');
-      
+
       // パーソナライゼーションエンジンを使用して例文を混合
-      List<Example> examples = await _personalizationEngine.generateMixedExamples(
-        categoryId, 
-        _currentUser?.profile,
-        baseExamples
+      List<Example> examples = await _personalizationEngine
+          .generateMixedExamples(
+            categoryId,
+            _currentUser?.profile,
+            baseExamples,
+          );
+
+      print(
+        'MockDataService: Final examples count: ${examples.length} (difference: ${examples.length - baseExamples.length})',
       );
-      
-      print('MockDataService: Final examples count: ${examples.length} (difference: ${examples.length - baseExamples.length})');
       return examples;
     } catch (e) {
       print('MockDataService: Error getting personalized examples: $e');
-      
+
       // フォールバック：基本例文のみ返す
       return await getBaseExamples(categoryId);
     }
@@ -242,20 +333,25 @@ class MockDataService {
   /// 基本例文のみを取得（パーソナライゼーション無し）
   Future<List<Example>> getBaseExamples(String categoryId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    
+
     final category = await getCategory(categoryId);
     return category.examples;
   }
 
-  Future<void> updateExampleCompletion(String exampleId, bool isCompleted) async {
+  Future<void> updateExampleCompletion(
+    String exampleId,
+    bool isCompleted,
+  ) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     for (int i = 0; i < _levels.length; i++) {
       for (int j = 0; j < _levels[i].categories.length; j++) {
         for (int k = 0; k < _levels[i].categories[j].examples.length; k++) {
           if (_levels[i].categories[j].examples[k].id == exampleId) {
-            _levels[i].categories[j].examples[k] = 
-                _levels[i].categories[j].examples[k].copyWith(
+            _levels[i].categories[j].examples[k] = _levels[i]
+                .categories[j]
+                .examples[k]
+                .copyWith(
                   isCompleted: isCompleted,
                   completedAt: isCompleted ? DateTime.now() : null,
                 );
@@ -268,13 +364,15 @@ class MockDataService {
 
   Future<void> toggleFavorite(String exampleId) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     for (int i = 0; i < _levels.length; i++) {
       for (int j = 0; j < _levels[i].categories.length; j++) {
         for (int k = 0; k < _levels[i].categories[j].examples.length; k++) {
           if (_levels[i].categories[j].examples[k].id == exampleId) {
-            _levels[i].categories[j].examples[k] = 
-                _levels[i].categories[j].examples[k].copyWith(
+            _levels[i].categories[j].examples[k] = _levels[i]
+                .categories[j]
+                .examples[k]
+                .copyWith(
                   isFavorite: !_levels[i].categories[j].examples[k].isFavorite,
                 );
             return;
@@ -2120,7 +2218,8 @@ class MockDataService {
                 categoryId: 'basic_conditionals',
                 levelId: 'high_school_1',
                 japanese: 'もし昨日勉強していたら、今日のテストは簡単だったでしょう。',
-                english: 'If I had studied yesterday, today\'s test would have been easy.',
+                english:
+                    'If I had studied yesterday, today\'s test would have been easy.',
                 order: 10,
               ),
             ],
@@ -2130,7 +2229,8 @@ class MockDataService {
           Category(
             id: 'conjunctions',
             name: '接続詞',
-            description: 'and, but, or, because, since, when, while など（理由・原因表現含む）',
+            description:
+                'and, but, or, because, since, when, while など（理由・原因表現含む）',
             levelId: 'high_school_1',
             order: 8,
             examples: [
@@ -2302,7 +2402,8 @@ class MockDataService {
                 categoryId: 'comparison_constructions',
                 levelId: 'high_school_1',
                 japanese: 'この問題は他のどの問題よりも難しいです。',
-                english: 'This problem is more difficult than any other problem.',
+                english:
+                    'This problem is more difficult than any other problem.',
                 order: 10,
               ),
             ],
@@ -2676,7 +2777,8 @@ class MockDataService {
                 categoryId: 'conditional',
                 levelId: 'high_school_2',
                 japanese: 'もし彼女が英語を話せたら、その仕事に応募できるのに。',
-                english: 'If she could speak English, she could apply for that job.',
+                english:
+                    'If she could speak English, she could apply for that job.',
                 order: 10,
               ),
             ],
@@ -3083,7 +3185,8 @@ class MockDataService {
                 categoryId: 'appositive_that',
                 levelId: 'high_school_2',
                 japanese: '試験が延期されるという可能性があります。',
-                english: 'There is a possibility that the exam will be postponed.',
+                english:
+                    'There is a possibility that the exam will be postponed.',
                 order: 4,
               ),
               Example(
@@ -3115,7 +3218,8 @@ class MockDataService {
                 categoryId: 'appositive_that',
                 levelId: 'high_school_2',
                 japanese: '会議が中止になるという発表がありました。',
-                english: 'There was an announcement that the meeting would be canceled.',
+                english:
+                    'There was an announcement that the meeting would be canceled.',
                 order: 8,
               ),
               Example(
@@ -3639,7 +3743,8 @@ class MockDataService {
                 categoryId: 'advanced_subjunctive',
                 levelId: 'high_school_3',
                 japanese: 'もし雨が降らなかったら、ピクニックに行けたのに。',
-                english: 'If it had not rained, we could have gone on a picnic.',
+                english:
+                    'If it had not rained, we could have gone on a picnic.',
                 order: 4,
               ),
               Example(
@@ -3663,7 +3768,8 @@ class MockDataService {
                 categoryId: 'advanced_subjunctive',
                 levelId: 'high_school_3',
                 japanese: '彼があのとき努力していたら、今頃成功していたでしょう。',
-                english: 'If he had worked hard then, he would be successful now.',
+                english:
+                    'If he had worked hard then, he would be successful now.',
                 order: 7,
               ),
               Example(
@@ -3687,7 +3793,8 @@ class MockDataService {
                 categoryId: 'advanced_subjunctive',
                 levelId: 'high_school_3',
                 japanese: '彼が昨日勉強していたら、今日の試験は楽だったでしょう。',
-                english: 'If he had studied yesterday, today\'s exam would be easy.',
+                english:
+                    'If he had studied yesterday, today\'s exam would be easy.',
                 order: 10,
               ),
             ],
@@ -3912,7 +4019,8 @@ class MockDataService {
                 categoryId: 'inanimate_subject',
                 levelId: 'high_school_3',
                 japanese: '科学技術の進歩により、生活が便利になりました。',
-                english: 'The progress of science and technology has made our lives convenient.',
+                english:
+                    'The progress of science and technology has made our lives convenient.',
                 order: 4,
               ),
               Example(
@@ -4193,7 +4301,8 @@ class MockDataService {
                 categoryId: 'compound_relatives',
                 levelId: 'high_school_3',
                 japanese: 'どちらの道を選んでも、困難があります。',
-                english: 'Whichever way you choose, there will be difficulties.',
+                english:
+                    'Whichever way you choose, there will be difficulties.',
                 order: 5,
               ),
               Example(
@@ -4361,7 +4470,8 @@ class MockDataService {
                 categoryId: 'complex_structures',
                 levelId: 'university_toeic',
                 japanese: '彼女が成功した理由は、努力を惜しまなかったからです。',
-                english: 'The reason why she succeeded is that she spared no effort.',
+                english:
+                    'The reason why she succeeded is that she spared no effort.',
                 order: 2,
               ),
               Example(
@@ -4393,7 +4503,8 @@ class MockDataService {
                 categoryId: 'complex_structures',
                 levelId: 'university_toeic',
                 japanese: '彼が成功したのは、努力しただけでなく運もあったからです。',
-                english: 'The reason he succeeded is not only that he worked hard but also that he was lucky.',
+                english:
+                    'The reason he succeeded is not only that he worked hard but also that he was lucky.',
                 order: 6,
               ),
               Example(
@@ -4401,7 +4512,8 @@ class MockDataService {
                 categoryId: 'complex_structures',
                 levelId: 'university_toeic',
                 japanese: '彼女が提案したことは、私たちが今まで考えていたこととは全く違っていました。',
-                english: 'What she proposed was completely different from what we had been thinking.',
+                english:
+                    'What she proposed was completely different from what we had been thinking.',
                 order: 7,
               ),
               Example(
@@ -4417,7 +4529,8 @@ class MockDataService {
                 categoryId: 'complex_structures',
                 levelId: 'university_toeic',
                 japanese: 'どんなに困難であっても、私たちはあきらめません。',
-                english: 'No matter how difficult it may be, we will not give up.',
+                english:
+                    'No matter how difficult it may be, we will not give up.',
                 order: 9,
               ),
               Example(
@@ -4909,7 +5022,8 @@ class MockDataService {
                 categoryId: 'phone_email',
                 levelId: 'practical_english',
                 japanese: 'お忙しい中お時間をいただき、ありがとうございます。',
-                english: 'Thank you for taking the time despite your busy schedule.',
+                english:
+                    'Thank you for taking the time despite your busy schedule.',
                 order: 1,
               ),
               Example(
@@ -5177,21 +5291,9 @@ class MockDataService {
     ];
   }
 
-  List<String> get ageGroups => [
-    '10代学生',
-    '20代社会人',
-    '30代社会人',
-    '40代以上',
-  ];
+  List<String> get ageGroups => ['10代学生', '20代社会人', '30代社会人', '40代以上'];
 
-  List<String> get occupations => [
-    '学生',
-    '会社員',
-    '公務員',
-    '自営業',
-    '主婦/主夫',
-    'その他',
-  ];
+  List<String> get occupations => ['学生', '会社員', '公務員', '自営業', '主婦/主夫', 'その他'];
 
   List<String> get englishLevels => [
     '初心者（1年未満）',
@@ -5256,19 +5358,9 @@ class MockDataService {
     '休日の午後',
   ];
 
-  List<String> get targetStudyMinutes => [
-    '5-10分',
-    '10-20分',
-    '20-30分',
-    '30分以上',
-  ];
+  List<String> get targetStudyMinutes => ['5-10分', '10-20分', '20-30分', '30分以上'];
 
-  List<String> get challenges => [
-    '時間がない',
-    'モチベーション維持',
-    '内容が退屈',
-    '効果が実感できない',
-  ];
+  List<String> get challenges => ['時間がない', 'モチベーション維持', '内容が退屈', '効果が実感できない'];
 
   List<String> get regions => [
     '北海道',

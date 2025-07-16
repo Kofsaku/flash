@@ -5,10 +5,7 @@ import '../router.dart';
 class ErrorScreen extends StatelessWidget {
   final String message;
 
-  const ErrorScreen({
-    super.key,
-    required this.message,
-  });
+  const ErrorScreen({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -132,9 +129,7 @@ class ErrorScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         const Text(
                           'トラブルシューティング',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),

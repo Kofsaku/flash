@@ -20,11 +20,7 @@ class CategoryStatistics extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.analytics,
-                      color: Colors.blue[600],
-                      size: 24,
-                    ),
+                    Icon(Icons.analytics, color: Colors.blue[600], size: 24),
                     const SizedBox(width: 8),
                     const Text(
                       'カテゴリー統計',
@@ -69,10 +65,7 @@ class CategoryStatistics extends StatelessWidget {
                 children: [
                   Text(
                     '総カテゴリー数',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
                     '$totalCategories',
@@ -89,10 +82,7 @@ class CategoryStatistics extends StatelessWidget {
                 children: [
                   Text(
                     '完了済み',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
                     '$completedCategories',
@@ -115,10 +105,7 @@ class CategoryStatistics extends StatelessWidget {
                 children: [
                   Text(
                     '完了率',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
                     '${(completionRate * 100).toInt()}%',
@@ -145,18 +132,17 @@ class CategoryStatistics extends StatelessWidget {
   }
 
   Widget _buildLevelBreakdown(Map<String, dynamic> stats) {
-    final levelCategoryCounts = stats['levelCategoryCounts'] as Map<String, int>;
-    final levelCompletedCounts = stats['levelCompletedCounts'] as Map<String, int>;
+    final levelCategoryCounts =
+        stats['levelCategoryCounts'] as Map<String, int>;
+    final levelCompletedCounts =
+        stats['levelCompletedCounts'] as Map<String, int>;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'レベル別内訳',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         ...levelCategoryCounts.entries.map((entry) {
@@ -188,10 +174,7 @@ class CategoryStatistics extends StatelessWidget {
                     ),
                     Text(
                       '$completedCount/$totalCount',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),

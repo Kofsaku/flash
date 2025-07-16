@@ -5,6 +5,7 @@ import '../../providers/app_provider.dart';
 import '../../models/user.dart';
 import '../../router.dart';
 import '../../widgets/progress_indicator.dart';
+import '../../widgets/app_drawer.dart';
 
 class ProfileStep4Screen extends StatefulWidget {
   const ProfileStep4Screen({super.key});
@@ -34,7 +35,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
   void _loadExistingProfile() {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final profile = appProvider.currentUser?.profile;
-    
+
     if (profile != null) {
       // Loading existing profile data
       setState(() {
@@ -42,9 +43,13 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
         _selectedFamilyStructure = profile.familyStructure;
         _selectedEnglishUsageScenarios.clear();
         _selectedEnglishUsageScenarios.addAll(profile.englishUsageScenarios);
-        
+
         // Load existing topics into text controllers
-        for (int i = 0; i < profile.interestingTopics.length && i < _topicControllers.length; i++) {
+        for (
+          int i = 0;
+          i < profile.interestingTopics.length && i < _topicControllers.length;
+          i++
+        ) {
           _topicControllers[i].text = profile.interestingTopics[i];
         }
       });
@@ -67,6 +72,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: Consumer<AppProvider>(
           builder: (context, appProvider, child) {
@@ -74,10 +80,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  const StepProgressIndicator(
-                    currentStep: 4,
-                    totalSteps: 5,
-                  ),
+                  const StepProgressIndicator(currentStep: 4, totalSteps: 5),
                   const SizedBox(height: 32),
                   Expanded(
                     child: SingleChildScrollView(
@@ -95,10 +98,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                           const SizedBox(height: 8),
                           const Text(
                             'より詳細な情報を教えてください。\n超個別化された学習体験を提供します。\n（すべて任意項目です）',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 32),
                           _buildRadioSection(
@@ -114,7 +114,9 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                             '任意',
                             appProvider.mockDataService.familyStructures,
                             _selectedFamilyStructure,
-                            (value) => setState(() => _selectedFamilyStructure = value),
+                            (value) => setState(
+                              () => _selectedFamilyStructure = value,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           _buildCheckboxSection(
@@ -172,22 +174,25 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: appProvider.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          child:
+                              appProvider.isLoading
+                                  ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : const Text(
+                                    '次へ',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                )
-                              : const Text(
-                                  '次へ',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                     ],
@@ -215,10 +220,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -267,10 +269,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -312,10 +311,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
           children: [
             const Text(
               '興味のあるトピック',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -338,10 +334,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
         const SizedBox(height: 8),
         const Text(
           '最近関心のあることを3つまで入力してください\n例：「最新のAI技術」「韓国ドラマ」「キャンプ」',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 12),
         ...List.generate(3, (index) {
@@ -364,26 +357,29 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
   void _handleNext() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
-    
-    final interestingTopics = _topicControllers
-        .map((controller) => controller.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
-    
+
+    final interestingTopics =
+        _topicControllers
+            .map((controller) => controller.text.trim())
+            .where((text) => text.isNotEmpty)
+            .toList();
+
     // Saving profile data
-    
-    final updatedProfile = currentProfile?.copyWith(
-      region: _selectedRegion,
-      familyStructure: _selectedFamilyStructure,
-      englishUsageScenarios: _selectedEnglishUsageScenarios,
-      interestingTopics: interestingTopics,
-    ) ?? Profile(
-      region: _selectedRegion,
-      familyStructure: _selectedFamilyStructure,
-      englishUsageScenarios: _selectedEnglishUsageScenarios,
-      interestingTopics: interestingTopics,
-    );
-    
+
+    final updatedProfile =
+        currentProfile?.copyWith(
+          region: _selectedRegion,
+          familyStructure: _selectedFamilyStructure,
+          englishUsageScenarios: _selectedEnglishUsageScenarios,
+          interestingTopics: interestingTopics,
+        ) ??
+        Profile(
+          region: _selectedRegion,
+          familyStructure: _selectedFamilyStructure,
+          englishUsageScenarios: _selectedEnglishUsageScenarios,
+          interestingTopics: interestingTopics,
+        );
+
     final success = await appProvider.saveProfile(updatedProfile);
     if (success && mounted) {
       context.go(AppRouter.profileStep5);

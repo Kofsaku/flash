@@ -26,20 +26,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Future<void> _loadFavorites() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    
+
     try {
       if (appProvider.levels.isEmpty) {
         await appProvider.loadLevels();
       }
-      
+
       List<Example> allFavorites = [];
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
-          final favoriteExamples = category.examples.where((e) => e.isFavorite).toList();
+          final favoriteExamples =
+              category.examples.where((e) => e.isFavorite).toList();
           allFavorites.addAll(favoriteExamples);
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _favoriteExamples = allFavorites;
@@ -70,11 +71,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'メニュー',
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'メニュー',
+              ),
         ),
         actions: [
           IconButton(
@@ -90,15 +92,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ],
       ),
       drawer: const AppDrawer(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildFavoritesContent(),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildFavoritesContent(),
     );
   }
 
   Widget _buildFavoritesContent() {
     final filteredExamples = _filteredExamples;
-    
+
     if (_favoriteExamples.isEmpty) {
       return _buildEmptyState();
     }
@@ -107,9 +110,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       children: [
         _buildFilterChips(),
         Expanded(
-          child: filteredExamples.isEmpty
-              ? _buildNoResultsState()
-              : _buildFavoritesList(filteredExamples),
+          child:
+              filteredExamples.isEmpty
+                  ? _buildNoResultsState()
+                  : _buildFavoritesList(filteredExamples),
         ),
       ],
     );
@@ -118,7 +122,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget _buildFilterChips() {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final levels = appProvider.levels;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
@@ -132,15 +136,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               selectedColor: Colors.blue[100],
             ),
             const SizedBox(width: 8),
-            ...levels.map((level) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(level.name),
-                selected: _filterLevel == level.id,
-                onSelected: (_) => setState(() => _filterLevel = level.id),
-                selectedColor: Colors.blue[100],
+            ...levels.map(
+              (level) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(level.name),
+                  selected: _filterLevel == level.id,
+                  onSelected: (_) => setState(() => _filterLevel = level.id),
+                  selectedColor: Colors.blue[100],
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -152,11 +158,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.favorite_border,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.favorite_border, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'お気に入りがありません',
@@ -170,10 +172,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Text(
             '学習中に♡ボタンを押して\nお気に入りに追加しましょう',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -195,19 +194,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.filter_list_off,
-            size: 60,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.filter_list_off, size: 60, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'フィルター条件に一致する\nお気に入りがありません',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -228,14 +220,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget _buildFavoriteCard(Example example, int index) {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final level = appProvider.levels.firstWhere((l) => l.id == example.levelId);
-    final category = level.categories.firstWhere((c) => c.id == example.categoryId);
+    final category = level.categories.firstWhere(
+      (c) => c.id == example.categoryId,
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () => _startStudyFromExample(example),
         borderRadius: BorderRadius.circular(12),
@@ -247,7 +239,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue[100],
                       borderRadius: BorderRadius.circular(12),
@@ -263,7 +258,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green[100],
                       borderRadius: BorderRadius.circular(12),
@@ -297,17 +295,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               const SizedBox(height: 8),
               Text(
                 example.english,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   if (example.isCompleted)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green[100],
                         borderRadius: BorderRadius.circular(8),
@@ -343,18 +341,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   void _startStudyFromExample(Example example) {
-    context.go('${AppRouter.study}?categoryId=${example.categoryId}&index=${example.order - 1}');
+    context.go(
+      '${AppRouter.study}?categoryId=${example.categoryId}&index=${example.order - 1}',
+    );
   }
 
   void _toggleFavorite(Example example) async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     await appProvider.toggleFavorite(example.id);
-    
+
     // Remove from local list immediately for better UX
     setState(() {
       _favoriteExamples.removeWhere((e) => e.id == example.id);
     });
-    
+
     // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -363,5 +363,4 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       ),
     );
   }
-
 }

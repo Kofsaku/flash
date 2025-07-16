@@ -1,88 +1,161 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 /// Firebase Authentication サービス
 /// Gmail認証とメール/パスワード認証を提供
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  
+
+  // GoogleSignIn設定 - iOSはAppDelegateで設定されたconfigurationを使用
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+
+  // 初期化時にGoogle Sign-In設定を確認
+  AuthService() {
+    _checkGoogleSignInConfiguration();
+  }
+
+  void _checkGoogleSignInConfiguration() {
+    if (kDebugMode) {
+      print('🔐 Google Sign-In設定チェック開始');
+      print('🔐 プラットフォーム: ${Platform.operatingSystem}');
+      print('🔐 GoogleSignIn clientId: ${_googleSignIn.clientId}');
+      print('🔐 GoogleSignIn scopes: ${_googleSignIn.scopes}');
+    }
+  }
+
   // 現在のユーザー
   User? get currentUser => _auth.currentUser;
-  
+
   // 認証状態の監視
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-  
+
   // 認証済みかどうか
   bool get isAuthenticated => _auth.currentUser != null;
-  
+
   /// Gmail（Google）でサインイン
   Future<UserCredential?> signInWithGoogle() async {
     try {
       if (kDebugMode) {
         print('🔐 Google サインイン開始');
+        print('🔐 プラットフォーム: ${Platform.operatingSystem}');
+        print('🔐 GoogleSignIn clientId: ${_googleSignIn.clientId}');
+        print('🔐 GoogleSignIn scopes: ${_googleSignIn.scopes}');
+        print('🔐 現在のGoogleSignInユーザー: ${_googleSignIn.currentUser?.email}');
       }
-      
-      // Google サインインフローを開始
+
+      // 既存のサインイン状態をクリア
+      await _googleSignIn.signOut();
+
+      if (kDebugMode) {
+        print('🔐 既存のサインイン状態をクリア完了');
+      }
+
+      // Googleアカウント選択
+      if (kDebugMode) {
+        print('🔐 Google アカウント選択ダイアログを表示中...');
+      }
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         if (kDebugMode) {
-          print('🔐 Google サインインがキャンセルされました');
+          print('🔐 Google サインインがキャンセルされました（googleUserがnull）');
         }
         return null; // ユーザーがキャンセルした場合
       }
-      
+
       if (kDebugMode) {
-        print('🔐 Google アカウント取得: ${googleUser.email}');
+        print('🔐 Google アカウント取得成功: ${googleUser.email}');
+        print('🔐 Google アカウント表示名: ${googleUser.displayName}');
+        print('🔐 Google アカウントID: ${googleUser.id}');
       }
-      
-      // Google 認証情報を取得
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
-      // Firebase 認証情報を作成
+
+      // Google認証情報を取得
+      if (kDebugMode) {
+        print('🔐 Google認証情報を取得中...');
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      if (kDebugMode) {
+        print('🔐 Google認証情報取得成功');
+        print('🔐 AccessToken存在: ${googleAuth.accessToken != null}');
+        print('🔐 IdToken存在: ${googleAuth.idToken != null}');
+      }
+
+      // Firebase認証情報を作成
+      if (kDebugMode) {
+        print('🔐 Firebase認証情報を作成中...');
+      }
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      
-      // Firebase にサインイン
+
+      if (kDebugMode) {
+        print('🔐 Firebase認証情報作成成功');
+      }
+
+      // Firebaseにサインイン
+      if (kDebugMode) {
+        print('🔐 Firebaseにサインイン中...');
+      }
+
       final userCredential = await _auth.signInWithCredential(credential);
-      
+
       if (kDebugMode) {
         print('🔐 Firebase サインイン成功: ${userCredential.user?.email}');
+        print('🔐 Firebase ユーザーUID: ${userCredential.user?.uid}');
+        print('🔐 新規ユーザー: ${userCredential.additionalUserInfo?.isNewUser}');
       }
-      
+
       return userCredential;
-      
     } catch (e) {
       if (kDebugMode) {
         print('🔐 Google サインインエラー: $e');
+        print('🔐 エラーの詳細タイプ: ${e.runtimeType}');
+        print('🔐 エラーメッセージ詳細: ${e.toString()}');
+
+        // 特定のエラーパターンを確認
+        if (e.toString().contains('sign_in_canceled')) {
+          print('🔐 → ユーザーによるキャンセル');
+        } else if (e.toString().contains('network_error')) {
+          print('🔐 → ネットワークエラー');
+        } else if (e.toString().contains('sign_in_failed')) {
+          print('🔐 → サインイン失敗');
+        } else {
+          print('🔐 → 未知のエラー');
+        }
       }
       throw _handleAuthException(e);
     }
   }
-  
+
   /// メール/パスワードでサインイン
   Future<UserCredential> signInWithEmailAndPassword(
-    String email, 
-    String password
+    String email,
+    String password,
   ) async {
     try {
       if (kDebugMode) {
         print('🔐 メール/パスワード サインイン開始: $email');
       }
-      
+
       final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email.trim(), 
-        password: password
+        email: email.trim(),
+        password: password,
       );
-      
+
       if (kDebugMode) {
         print('🔐 メール/パスワード サインイン成功: ${userCredential.user?.email}');
       }
-      
+
       return userCredential;
     } on FirebaseAuthException catch (e) {
       if (kDebugMode) {
@@ -96,32 +169,32 @@ class AuthService {
       throw Exception('サインインに失敗しました: $e');
     }
   }
-  
+
   /// メール/パスワードでアカウント作成
   Future<UserCredential> createUserWithEmailAndPassword(
-    String email, 
-    String password,
-    {String? displayName}
-  ) async {
+    String email,
+    String password, {
+    String? displayName,
+  }) async {
     try {
       if (kDebugMode) {
         print('🔐 アカウント作成開始: $email');
       }
-      
+
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(), 
-        password: password
+        email: email.trim(),
+        password: password,
       );
-      
+
       // 表示名を設定
       if (displayName != null && displayName.isNotEmpty) {
         await userCredential.user?.updateDisplayName(displayName);
       }
-      
+
       if (kDebugMode) {
         print('🔐 アカウント作成成功: ${userCredential.user?.email}');
       }
-      
+
       return userCredential;
     } on FirebaseAuthException catch (e) {
       if (kDebugMode) {
@@ -135,20 +208,20 @@ class AuthService {
       throw Exception('アカウント作成に失敗しました: $e');
     }
   }
-  
+
   /// サインアウト
   Future<void> signOut() async {
     try {
       if (kDebugMode) {
         print('🔐 サインアウト開始');
       }
-      
+
       // Google サインアウト
       await _googleSignIn.signOut();
-      
+
       // Firebase サインアウト
       await _auth.signOut();
-      
+
       if (kDebugMode) {
         print('🔐 サインアウト完了');
       }
@@ -159,16 +232,16 @@ class AuthService {
       throw Exception('サインアウトに失敗しました: $e');
     }
   }
-  
+
   /// パスワードリセットメール送信
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       if (kDebugMode) {
         print('🔐 パスワードリセットメール送信: $email');
       }
-      
+
       await _auth.sendPasswordResetEmail(email: email.trim());
-      
+
       if (kDebugMode) {
         print('🔐 パスワードリセットメール送信完了');
       }
@@ -184,16 +257,16 @@ class AuthService {
       throw Exception('パスワードリセットに失敗しました: $e');
     }
   }
-  
+
   /// アカウント削除
   Future<void> deleteAccount() async {
     try {
       if (kDebugMode) {
         print('🔐 アカウント削除開始');
       }
-      
+
       await _auth.currentUser?.delete();
-      
+
       if (kDebugMode) {
         print('🔐 アカウント削除完了');
       }
@@ -209,7 +282,7 @@ class AuthService {
       throw Exception('アカウント削除に失敗しました: $e');
     }
   }
-  
+
   /// ユーザー情報更新
   Future<void> updateDisplayName(String displayName) async {
     try {
@@ -224,12 +297,12 @@ class AuthService {
       throw Exception('表示名の更新に失敗しました: $e');
     }
   }
-  
+
   /// 現在のユーザー情報を取得
   Map<String, dynamic>? getCurrentUserInfo() {
     final user = _auth.currentUser;
     if (user == null) return null;
-    
+
     return {
       'uid': user.uid,
       'email': user.email,
@@ -239,16 +312,21 @@ class AuthService {
       'isAnonymous': user.isAnonymous,
       'creationTime': user.metadata.creationTime,
       'lastSignInTime': user.metadata.lastSignInTime,
-      'providerData': user.providerData.map((info) => {
-        'providerId': info.providerId,
-        'uid': info.uid,
-        'email': info.email,
-        'displayName': info.displayName,
-        'photoURL': info.photoURL,
-      }).toList(),
+      'providerData':
+          user.providerData
+              .map(
+                (info) => {
+                  'providerId': info.providerId,
+                  'uid': info.uid,
+                  'email': info.email,
+                  'displayName': info.displayName,
+                  'photoURL': info.photoURL,
+                },
+              )
+              .toList(),
     };
   }
-  
+
   /// Firebase Auth エラーハンドリング
   String _handleFirebaseAuthException(FirebaseAuthException e) {
     switch (e.code) {
@@ -280,17 +358,17 @@ class AuthService {
         return '認証エラーが発生しました: ${e.message ?? e.code}';
     }
   }
-  
+
   /// 一般的なエラーハンドリング
   String _handleAuthException(dynamic e) {
     if (e is FirebaseAuthException) {
       return _handleFirebaseAuthException(e);
     }
-    
+
     if (e.toString().contains('network')) {
       return 'ネットワーク接続を確認してください';
     }
-    
+
     return '認証エラーが発生しました: $e';
   }
 }

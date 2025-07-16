@@ -5,6 +5,7 @@ import '../../providers/app_provider.dart';
 import '../../models/user.dart';
 import '../../router.dart';
 import '../../widgets/progress_indicator.dart';
+import '../../widgets/app_drawer.dart';
 
 class ProfileStep2Screen extends StatefulWidget {
   const ProfileStep2Screen({super.key});
@@ -29,7 +30,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
   void _loadExistingProfile() {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final profile = appProvider.currentUser?.profile;
-    
+
     if (profile != null) {
       // Loading existing profile data
       setState(() {
@@ -50,6 +51,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: Consumer<AppProvider>(
           builder: (context, appProvider, child) {
@@ -57,10 +59,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  const StepProgressIndicator(
-                    currentStep: 2,
-                    totalSteps: 5,
-                  ),
+                  const StepProgressIndicator(currentStep: 2, totalSteps: 5),
                   const SizedBox(height: 32),
                   Expanded(
                     child: SingleChildScrollView(
@@ -78,10 +77,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
                           const SizedBox(height: 8),
                           const Text(
                             'あなたの興味・関心を教えてください。\nより関連性の高い例文を生成します。',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 32),
                           _buildCheckboxSection(
@@ -105,7 +101,8 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
                             '任意',
                             appProvider.mockDataService.industries,
                             _selectedIndustry,
-                            (value) => setState(() => _selectedIndustry = value),
+                            (value) =>
+                                setState(() => _selectedIndustry = value),
                           ),
                           const SizedBox(height: 24),
                           _buildCheckboxSection(
@@ -195,23 +192,26 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: required.contains('必須') ? Colors.red[100] : Colors.grey[100],
+                color:
+                    required.contains('必須')
+                        ? Colors.red[100]
+                        : Colors.grey[100],
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 required,
                 style: TextStyle(
                   fontSize: 12,
-                  color: required.contains('必須') ? Colors.red[600] : Colors.grey[600],
+                  color:
+                      required.contains('必須')
+                          ? Colors.red[600]
+                          : Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -246,10 +246,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -292,19 +289,21 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
   void _handleNext() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
-    
+
     // Saving profile data
-    
-    final updatedProfile = currentProfile?.copyWith(
-      hobbies: _selectedHobbies,
-      industry: _selectedIndustry,
-      lifestyle: _selectedLifestyle,
-    ) ?? Profile(
-      hobbies: _selectedHobbies,
-      industry: _selectedIndustry,
-      lifestyle: _selectedLifestyle,
-    );
-    
+
+    final updatedProfile =
+        currentProfile?.copyWith(
+          hobbies: _selectedHobbies,
+          industry: _selectedIndustry,
+          lifestyle: _selectedLifestyle,
+        ) ??
+        Profile(
+          hobbies: _selectedHobbies,
+          industry: _selectedIndustry,
+          lifestyle: _selectedLifestyle,
+        );
+
     final success = await appProvider.saveProfile(updatedProfile);
     if (success && mounted) {
       context.go(AppRouter.profileStep3);

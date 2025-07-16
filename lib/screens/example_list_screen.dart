@@ -9,10 +9,7 @@ import '../widgets/app_drawer.dart';
 class ExampleListScreen extends StatefulWidget {
   final String categoryId;
 
-  const ExampleListScreen({
-    super.key,
-    required this.categoryId,
-  });
+  const ExampleListScreen({super.key, required this.categoryId});
 
   @override
   State<ExampleListScreen> createState() => _ExampleListScreenState();
@@ -32,14 +29,16 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
 
   Future<void> _loadExamples() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    
+
     try {
-      print('ExampleListScreen: Loading examples for category ${widget.categoryId}');
+      print(
+        'ExampleListScreen: Loading examples for category ${widget.categoryId}',
+      );
       final category = await appProvider.getCategory(widget.categoryId);
       final examples = await appProvider.getExamples(widget.categoryId);
-      
+
       print('ExampleListScreen: Received ${examples.length} examples');
-      
+
       // Find the levelId for this category
       String? levelId;
       for (final level in appProvider.levels) {
@@ -51,7 +50,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
         }
         if (levelId != null) break;
       }
-      
+
       if (mounted) {
         setState(() {
           _category = category;
@@ -79,11 +78,12 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'メニュー',
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'メニュー',
+              ),
         ),
         actions: [
           if (_examples.isNotEmpty)
@@ -95,7 +95,8 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
           if (_levelId != null)
             IconButton(
               icon: const Icon(Icons.list_alt),
-              onPressed: () => context.go('${AppRouter.category}?levelId=$_levelId'),
+              onPressed:
+                  () => context.go('${AppRouter.category}?levelId=$_levelId'),
               tooltip: 'カテゴリー選択に戻る',
             ),
           IconButton(
@@ -106,22 +107,24 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
         ],
       ),
       drawer: const AppDrawer(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _category == null
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _category == null
               ? _buildErrorWidget()
               : _buildExampleList(),
-      floatingActionButton: _examples.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () => _startStudy(0),
-              backgroundColor: Colors.blue[600],
-              icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: const Text(
-                '学習開始',
-                style: TextStyle(color: Colors.white),
-              ),
-            )
-          : null,
+      floatingActionButton:
+          _examples.isNotEmpty
+              ? FloatingActionButton.extended(
+                onPressed: () => _startStudy(0),
+                backgroundColor: Colors.blue[600],
+                icon: const Icon(Icons.play_arrow, color: Colors.white),
+                label: const Text(
+                  '学習開始',
+                  style: TextStyle(color: Colors.white),
+                ),
+              )
+              : null,
     );
   }
 
@@ -130,18 +133,11 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
+          Icon(Icons.error_outline, size: 64, color: Colors.red),
           SizedBox(height: 16),
           Text(
             'カテゴリーが見つかりませんでした',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -162,17 +158,11 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
               children: [
                 const Text(
                   '例文一覧',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${_examples.length}件',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -206,18 +196,12 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
         children: [
           Text(
             _category!.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             _category!.description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 12),
           Row(
@@ -228,16 +212,15 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
                   children: [
                     Text(
                       '進捗: ${_category!.completedExamples}/${_category!.totalExamples}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: _category!.progress,
                       backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.blue[600]!,
+                      ),
                     ),
                   ],
                 ),
@@ -271,9 +254,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         onTap: () => _startStudy(index),
         borderRadius: BorderRadius.circular(8),
@@ -285,24 +266,28 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: example.isCompleted ? Colors.green[600] : Colors.grey[300],
+                  color:
+                      example.isCompleted
+                          ? Colors.green[600]
+                          : Colors.grey[300],
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: example.isCompleted
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 20,
-                        )
-                      : Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                  child:
+                      example.isCompleted
+                          ? const Icon(
+                            Icons.check,
                             color: Colors.white,
+                            size: 20,
+                          )
+                          : Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -322,10 +307,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
                     const SizedBox(height: 4),
                     Text(
                       example.english,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -336,11 +318,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
               Column(
                 children: [
                   if (example.isFavorite)
-                    Icon(
-                      Icons.favorite,
-                      color: Colors.red[400],
-                      size: 20,
-                    ),
+                    Icon(Icons.favorite, color: Colors.red[400], size: 20),
                   const SizedBox(height: 4),
                   Icon(
                     Icons.arrow_forward_ios,
@@ -360,7 +338,7 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
     setState(() {
       _examples.shuffle();
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('例文をシャッフルしました'),
@@ -370,16 +348,18 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
   }
 
   void _startStudy(int startIndex) {
-    context.go('${AppRouter.study}?categoryId=${widget.categoryId}&index=$startIndex');
+    context.go(
+      '${AppRouter.study}?categoryId=${widget.categoryId}&index=$startIndex',
+    );
   }
 
   void _showCategorySwitcher() async {
     if (_levelId == null) return;
-    
+
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final level = await appProvider.getLevel(_levelId!);
     if (level == null) return;
-    
+
     // ignore: use_build_context_synchronously
     showModalBottomSheet(
       // ignore: use_build_context_synchronously
@@ -387,187 +367,228 @@ class _ExampleListScreenState extends State<ExampleListScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       // ignore: use_build_context_synchronously
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.blue[600],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.swap_horiz, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'カテゴリーを選択',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+      builder:
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: level.categories.length,
-                itemBuilder: (context, index) {
-                  final category = level.categories[index];
-                  final isSelected = category.id == widget.categoryId;
-                  final completedCount = category.examples.where((e) => e.isCompleted).length;
-                  final progressPercent = category.totalExamples > 0 
-                      ? (completedCount / category.totalExamples * 100).round()
-                      : 0;
-                  
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: isSelected ? null : () {
-                        Navigator.of(context).pop();
-                        context.go('${AppRouter.exampleList}?categoryId=${category.id}');
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue[50] : Colors.white,
-                          border: Border.all(
-                            color: isSelected ? Colors.blue[300]! : Colors.grey[200]!,
-                            width: isSelected ? 2 : 1,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.swap_horiz, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'カテゴリーを選択',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            if (isSelected)
-                              BoxShadow(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                          ],
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.blue[600] : Colors.grey[400],
-                                shape: BoxShape.circle,
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: level.categories.length,
+                    itemBuilder: (context, index) {
+                      final category = level.categories[index];
+                      final isSelected = category.id == widget.categoryId;
+                      final completedCount =
+                          category.examples.where((e) => e.isCompleted).length;
+                      final progressPercent =
+                          category.totalExamples > 0
+                              ? (completedCount / category.totalExamples * 100)
+                                  .round()
+                              : 0;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: InkWell(
+                          onTap:
+                              isSelected
+                                  ? null
+                                  : () {
+                                    Navigator.of(context).pop();
+                                    context.go(
+                                      '${AppRouter.exampleList}?categoryId=${category.id}',
+                                    );
+                                  },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected ? Colors.blue[50] : Colors.white,
+                              border: Border.all(
+                                color:
+                                    isSelected
+                                        ? Colors.blue[300]!
+                                        : Colors.grey[200]!,
+                                width: isSelected ? 2 : 1,
                               ),
-                              child: Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                if (isSelected)
+                                  BoxShadow(
+                                    color: Colors.blue.withValues(alpha: 0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isSelected
+                                            ? Colors.blue[600]
+                                            : Colors.grey[400],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category.name,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected ? Colors.blue[600] : Colors.black87,
-                                    ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        category.name,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              isSelected
+                                                  ? Colors.blue[600]
+                                                  : Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        category.description,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    category.description,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (isSelected)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue[600],
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.check, color: Colors.white, size: 16),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '選択中',
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (isSelected)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[600],
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.check,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              '選択中',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              progressPercent == 100
+                                                  ? Colors.green[100]
+                                                  : Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '$progressPercent%',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color:
+                                                progressPercent == 100
+                                                    ? Colors.green[600]
+                                                    : Colors.grey[600],
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: progressPercent == 100 ? Colors.green[100] : Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '$progressPercent%',
+                                      ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '$completedCount/${category.totalExamples}',
                                       style: TextStyle(
-                                        color: progressPercent == 100 ? Colors.green[600] : Colors.grey[600],
                                         fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[600],
                                       ),
                                     ),
-                                  ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '$completedCount/${category.totalExamples}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
-
 }

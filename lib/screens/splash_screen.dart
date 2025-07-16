@@ -26,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final appProvider = Provider.of<AppProvider>(context, listen: false);
       await appProvider.initialize();
       await Future.delayed(const Duration(seconds: 2));
-      
+
       if (mounted) {
         // 認証状態に応じて自動的にrouter.dartでリダイレクトされる
         context.go(AppRouter.home);
@@ -46,11 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.flash_on,
-              size: 100,
-              color: Colors.white,
-            ),
+            const Icon(Icons.flash_on, size: 100, color: Colors.white),
             const SizedBox(height: 24),
             const Text(
               '瞬間英作文',
@@ -63,10 +59,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 8),
             const Text(
               'Flash Composition',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 48),
             const CircularProgressIndicator(
@@ -75,10 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 16),
             const Text(
               'アプリを起動しています...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
           ],
         ),

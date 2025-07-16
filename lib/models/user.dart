@@ -50,7 +50,8 @@ class User {
       email: json['email'],
       name: json['name'],
       isAuthenticated: json['isAuthenticated'] ?? false,
-      profile: json['profile'] != null ? Profile.fromJson(json['profile']) : null,
+      profile:
+          json['profile'] != null ? Profile.fromJson(json['profile']) : null,
       dailyGoal: json['dailyGoal'] ?? 10,
     );
   }
@@ -61,24 +62,24 @@ class Profile {
   final String? ageGroup;
   final String? occupation;
   final String? englishLevel;
-  
+
   // Step 2: 興味・関心
   final List<String> hobbies;
   final String? industry;
   final List<String> lifestyle;
-  
+
   // Step 3: 学習環境・目標
   final String? learningGoal;
   final List<String> studyTime;
   final String? targetStudyMinutes;
   final List<String> challenges;
-  
+
   // Step 4: 個人的背景
   final String? region;
   final String? familyStructure;
   final List<String> englishUsageScenarios;
   final List<String> interestingTopics;
-  
+
   // Step 5: 学習特性診断
   final List<String> learningStyles;
   final Map<String, String> skillLevels;
@@ -87,6 +88,9 @@ class Profile {
   final String? motivationDetail;
   final String? correctionStyle;
   final String? encouragementFrequency;
+
+  // Profile setup completion flag
+  final bool isCompleted;
 
   Profile({
     this.ageGroup,
@@ -110,6 +114,7 @@ class Profile {
     this.motivationDetail,
     this.correctionStyle,
     this.encouragementFrequency,
+    this.isCompleted = false,
   });
 
   Profile copyWith({
@@ -134,6 +139,7 @@ class Profile {
     String? motivationDetail,
     String? correctionStyle,
     String? encouragementFrequency,
+    bool? isCompleted,
   }) {
     return Profile(
       ageGroup: ageGroup ?? this.ageGroup,
@@ -148,7 +154,8 @@ class Profile {
       challenges: challenges ?? this.challenges,
       region: region ?? this.region,
       familyStructure: familyStructure ?? this.familyStructure,
-      englishUsageScenarios: englishUsageScenarios ?? this.englishUsageScenarios,
+      englishUsageScenarios:
+          englishUsageScenarios ?? this.englishUsageScenarios,
       interestingTopics: interestingTopics ?? this.interestingTopics,
       learningStyles: learningStyles ?? this.learningStyles,
       skillLevels: skillLevels ?? this.skillLevels,
@@ -156,7 +163,9 @@ class Profile {
       weakAreas: weakAreas ?? this.weakAreas,
       motivationDetail: motivationDetail ?? this.motivationDetail,
       correctionStyle: correctionStyle ?? this.correctionStyle,
-      encouragementFrequency: encouragementFrequency ?? this.encouragementFrequency,
+      encouragementFrequency:
+          encouragementFrequency ?? this.encouragementFrequency,
+      isCompleted: isCompleted ?? this.isCompleted,
     );
   }
 
@@ -183,6 +192,7 @@ class Profile {
       'motivationDetail': motivationDetail,
       'correctionStyle': correctionStyle,
       'encouragementFrequency': encouragementFrequency,
+      'isCompleted': isCompleted,
     };
   }
 
@@ -191,24 +201,47 @@ class Profile {
       ageGroup: json['ageGroup'],
       occupation: json['occupation'],
       englishLevel: json['englishLevel'],
-      hobbies: json['hobbies'] != null ? List<String>.from(json['hobbies']) : [],
+      hobbies:
+          json['hobbies'] != null ? List<String>.from(json['hobbies']) : [],
       industry: json['industry'],
-      lifestyle: json['lifestyle'] != null ? List<String>.from(json['lifestyle']) : [],
+      lifestyle:
+          json['lifestyle'] != null ? List<String>.from(json['lifestyle']) : [],
       learningGoal: json['learningGoal'],
-      studyTime: json['studyTime'] != null ? List<String>.from(json['studyTime']) : [],
+      studyTime:
+          json['studyTime'] != null ? List<String>.from(json['studyTime']) : [],
       targetStudyMinutes: json['targetStudyMinutes'],
-      challenges: json['challenges'] != null ? List<String>.from(json['challenges']) : [],
+      challenges:
+          json['challenges'] != null
+              ? List<String>.from(json['challenges'])
+              : [],
       region: json['region'],
       familyStructure: json['familyStructure'],
-      englishUsageScenarios: json['englishUsageScenarios'] != null ? List<String>.from(json['englishUsageScenarios']) : [],
-      interestingTopics: json['interestingTopics'] != null ? List<String>.from(json['interestingTopics']) : [],
-      learningStyles: json['learningStyles'] != null ? List<String>.from(json['learningStyles']) : [],
-      skillLevels: json['skillLevels'] != null ? Map<String, String>.from(json['skillLevels']) : <String, String>{},
-      studyEnvironments: json['studyEnvironments'] != null ? List<String>.from(json['studyEnvironments']) : [],
-      weakAreas: json['weakAreas'] != null ? List<String>.from(json['weakAreas']) : [],
+      englishUsageScenarios:
+          json['englishUsageScenarios'] != null
+              ? List<String>.from(json['englishUsageScenarios'])
+              : [],
+      interestingTopics:
+          json['interestingTopics'] != null
+              ? List<String>.from(json['interestingTopics'])
+              : [],
+      learningStyles:
+          json['learningStyles'] != null
+              ? List<String>.from(json['learningStyles'])
+              : [],
+      skillLevels:
+          json['skillLevels'] != null
+              ? Map<String, String>.from(json['skillLevels'])
+              : <String, String>{},
+      studyEnvironments:
+          json['studyEnvironments'] != null
+              ? List<String>.from(json['studyEnvironments'])
+              : [],
+      weakAreas:
+          json['weakAreas'] != null ? List<String>.from(json['weakAreas']) : [],
       motivationDetail: json['motivationDetail'],
       correctionStyle: json['correctionStyle'],
       encouragementFrequency: json['encouragementFrequency'],
+      isCompleted: json['isCompleted'] ?? false,
     );
   }
 }

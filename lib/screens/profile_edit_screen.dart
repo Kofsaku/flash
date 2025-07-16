@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../providers/firebase_auth_provider.dart';
 import '../models/user.dart';
+import '../router.dart';
+import '../widgets/app_drawer.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -12,14 +14,15 @@ class ProfileEditScreen extends StatefulWidget {
   State<ProfileEditScreen> createState() => _ProfileEditScreenState();
 }
 
-class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTickerProviderStateMixin {
+class _ProfileEditScreenState extends State<ProfileEditScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   // Current profile data (will be loaded from provider)
   String? _selectedAgeGroup;
   String? _selectedOccupation;
   String? _selectedEnglishLevel;
-  
+
   // User account data
   final TextEditingController _nameController = TextEditingController();
   List<String> _selectedHobbies = [];
@@ -38,6 +41,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
   List<String> _selectedStudyEnvironments = [];
   List<String> _selectedWeakAreas = [];
   String? _motivationDetail;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -57,15 +61,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
   }
 
   void _loadCurrentProfile() {
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final user = appProvider.currentUser;
+    final authProvider = Provider.of<FirebaseAuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
     final profile = user?.profile;
-    
+
     // Load user account data
     if (user != null) {
       _nameController.text = user.name;
     }
-    
+
     if (profile != null) {
       setState(() {
         _selectedAgeGroup = profile.ageGroup;
@@ -80,7 +84,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
         _selectedChallenges = List.from(profile.challenges);
         _selectedRegion = profile.region;
         _selectedFamilyStructure = profile.familyStructure;
-        _selectedEnglishUsageScenarios = List.from(profile.englishUsageScenarios);
+        _selectedEnglishUsageScenarios = List.from(
+          profile.englishUsageScenarios,
+        );
         _selectedInterestingTopics = List.from(profile.interestingTopics);
         _selectedLearningStyles = List.from(profile.learningStyles);
         _skillLevels = Map.from(profile.skillLevels);
@@ -92,71 +98,85 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
   }
 
   Future<void> _saveProfile() async {
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    
+    if (!mounted || _isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    // ローディング状態を表示
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('保存中...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
     try {
-      // Firebase認証では名前だけ更新可能
-      final authProvider = Provider.of<FirebaseAuthProvider>(context, listen: false);
-      final userUpdateSuccess = await authProvider.updateUserInfo(
+      final authProvider = Provider.of<FirebaseAuthProvider>(
+        context,
+        listen: false,
+      );
+
+      // ユーザー名のみ更新
+      await authProvider.updateUserInfo(
         _nameController.text.trim(),
         authProvider.currentUser?.email ?? '',
       );
-      
-      if (!userUpdateSuccess) {
-        throw Exception('ユーザー情報の更新に失敗しました');
-      }
-      
-      // Then update profile
+
+      // プロフィール情報を更新（既存プロフィールから継承）
+      final currentProfile = authProvider.currentUser?.profile;
       final profile = Profile(
-        ageGroup: _selectedAgeGroup,
-        occupation: _selectedOccupation,
-        englishLevel: _selectedEnglishLevel,
-        hobbies: _selectedHobbies,
-        industry: _selectedIndustry,
-        lifestyle: _selectedLifestyle,
-        learningGoal: _selectedLearningGoal,
-        studyTime: _selectedStudyTime,
-        targetStudyMinutes: _targetStudyMinutes,
-        challenges: _selectedChallenges,
-        region: _selectedRegion,
-        familyStructure: _selectedFamilyStructure,
-        englishUsageScenarios: _selectedEnglishUsageScenarios,
-        interestingTopics: _selectedInterestingTopics,
-        learningStyles: _selectedLearningStyles,
-        skillLevels: _skillLevels,
-        studyEnvironments: _selectedStudyEnvironments,
-        weakAreas: _selectedWeakAreas,
-        motivationDetail: _motivationDetail,
+        ageGroup: _selectedAgeGroup ?? currentProfile?.ageGroup,
+        occupation: _selectedOccupation ?? currentProfile?.occupation,
+        englishLevel: _selectedEnglishLevel ?? currentProfile?.englishLevel,
+        hobbies: _selectedHobbies.isNotEmpty ? _selectedHobbies : (currentProfile?.hobbies ?? []),
+        industry: _selectedIndustry ?? currentProfile?.industry,
+        lifestyle: _selectedLifestyle.isNotEmpty ? _selectedLifestyle : (currentProfile?.lifestyle ?? []),
+        learningGoal: _selectedLearningGoal ?? currentProfile?.learningGoal,
+        studyTime: _selectedStudyTime.isNotEmpty ? _selectedStudyTime : (currentProfile?.studyTime ?? []),
+        targetStudyMinutes: _targetStudyMinutes ?? currentProfile?.targetStudyMinutes,
+        challenges: _selectedChallenges.isNotEmpty ? _selectedChallenges : (currentProfile?.challenges ?? []),
+        region: _selectedRegion ?? currentProfile?.region,
+        familyStructure: _selectedFamilyStructure ?? currentProfile?.familyStructure,
+        englishUsageScenarios: _selectedEnglishUsageScenarios.isNotEmpty ? _selectedEnglishUsageScenarios : (currentProfile?.englishUsageScenarios ?? []),
+        interestingTopics: _selectedInterestingTopics.isNotEmpty ? _selectedInterestingTopics : (currentProfile?.interestingTopics ?? []),
+        learningStyles: _selectedLearningStyles.isNotEmpty ? _selectedLearningStyles : (currentProfile?.learningStyles ?? []),
+        skillLevels: _skillLevels.isNotEmpty ? _skillLevels : (currentProfile?.skillLevels ?? {}),
+        studyEnvironments: _selectedStudyEnvironments.isNotEmpty ? _selectedStudyEnvironments : (currentProfile?.studyEnvironments ?? []),
+        weakAreas: _selectedWeakAreas.isNotEmpty ? _selectedWeakAreas : (currentProfile?.weakAreas ?? []),
+        motivationDetail: _motivationDetail ?? currentProfile?.motivationDetail,
+        isCompleted: true, // 編集時は常に完了状態
       );
 
-      final profileUpdateSuccess = await authProvider.saveProfile(profile);
-      
-      if (!profileUpdateSuccess) {
-        throw Exception('プロフィールの更新に失敗しました');
-      }
-      
+      await authProvider.saveProfile(profile);
+
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('プロフィールを更新しました'),
+            content: Text('プロフィールを保存しました'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Navigator.pop(context);
-          }
-        });
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('更新に失敗しました: $e'),
+            content: Text('保存に失敗しました: $e'),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }
@@ -185,18 +205,28 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
         ),
         actions: [
           TextButton(
-            onPressed: _saveProfile,
-            child: const Text(
-              '保存',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            onPressed: _isSaving ? null : _saveProfile,
+            child: _isSaving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    '保存',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
+      drawer: const AppDrawer(),
       body: TabBarView(
         controller: _tabController,
         children: [
@@ -227,8 +257,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 32),
-          
-          const Text('ユーザー名', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+
+          const Text(
+            'ユーザー名',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _nameController,
@@ -244,9 +277,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
               return null;
             },
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('メールアドレス', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            'メールアドレス',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Consumer<FirebaseAuthProvider>(
             builder: (context, authProvider, _) {
@@ -281,9 +317,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             'Googleアカウントのメールアドレスは変更できません',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('学習設定', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '学習設定',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -301,7 +340,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
               ),
             ),
           ),
-          
+
           const SizedBox(height: 32),
           Container(
             padding: const EdgeInsets.all(16),
@@ -315,17 +354,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.info,
-                      color: Colors.blue[600],
-                      size: 20,
-                    ),
+                    Icon(Icons.info, color: Colors.blue[600], size: 20),
                     const SizedBox(width: 8),
                     const Text(
                       '注意事項',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -341,7 +374,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
       ),
     );
   }
-
 
   Widget _buildBasicInfoTab() {
     return SingleChildScrollView(
@@ -367,70 +399,91 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             ),
           ),
           const SizedBox(height: 32),
-          
-          const Text('年齢層', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ['10代', '20代', '30代', '40代', '50代', '60代以上'].map((age) {
-              final isSelected = _selectedAgeGroup == age;
-              return FilterChip(
-                label: Text(age),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedAgeGroup = selected ? age : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+
+          const Text(
+            '年齢層',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          
-          const SizedBox(height: 24),
-          const Text('職業', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['学生', '会社員', '公務員', '自営業', '専業主婦/主夫', 'フリーランス', '退職者', 'その他'].map((job) {
-              final isSelected = _selectedOccupation == job;
-              return FilterChip(
-                label: Text(job),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedOccupation = selected ? job : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                ['10代', '20代', '30代', '40代', '50代', '60代以上'].map((age) {
+                  final isSelected = _selectedAgeGroup == age;
+                  return FilterChip(
+                    label: Text(age),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedAgeGroup = selected ? age : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('英語レベル', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '職業',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['初級', '初中級', '中級', '中上級', '上級'].map((level) {
-              final isSelected = _selectedEnglishLevel == level;
-              return FilterChip(
-                label: Text(level),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedEnglishLevel = selected ? level : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                [
+                  '学生',
+                  '会社員',
+                  '公務員',
+                  '自営業',
+                  '専業主婦/主夫',
+                  'フリーランス',
+                  '退職者',
+                  'その他',
+                ].map((job) {
+                  final isSelected = _selectedOccupation == job;
+                  return FilterChip(
+                    label: Text(job),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedOccupation = selected ? job : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            '英語レベル',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                ['初級', '初中級', '中級', '中上級', '上級'].map((level) {
+                  final isSelected = _selectedEnglishLevel == level;
+                  return FilterChip(
+                    label: Text(level),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedEnglishLevel = selected ? level : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -448,78 +501,114 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
-          
-          const Text('趣味', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ['映画・ドラマ', '音楽', '読書', 'スポーツ', '旅行', '料理', 'ゲーム', 'アニメ・漫画', 'アウトドア', 'ファッション', 'その他'].map((hobby) {
-              final isSelected = _selectedHobbies.contains(hobby);
-              return FilterChip(
-                label: Text(hobby),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedHobbies.add(hobby);
-                    } else {
-                      _selectedHobbies.remove(hobby);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+
+          const Text(
+            '趣味',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          
-          const SizedBox(height: 24),
-          const Text('業界・分野', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['IT・テクノロジー', '金融', '医療・ヘルスケア', '教育', '製造業', 'サービス業', '小売・流通', 'メディア・エンターテイメント', 'その他'].map((industry) {
-              final isSelected = _selectedIndustry == industry;
-              return FilterChip(
-                label: Text(industry),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedIndustry = selected ? industry : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                [
+                  '映画・ドラマ',
+                  '音楽',
+                  '読書',
+                  'スポーツ',
+                  '旅行',
+                  '料理',
+                  'ゲーム',
+                  'アニメ・漫画',
+                  'アウトドア',
+                  'ファッション',
+                  'その他',
+                ].map((hobby) {
+                  final isSelected = _selectedHobbies.contains(hobby);
+                  return FilterChip(
+                    label: Text(hobby),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedHobbies.add(hobby);
+                        } else {
+                          _selectedHobbies.remove(hobby);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('ライフスタイル', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '業界・分野',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['朝型', '夜型', '忙しい', 'のんびり', '計画的', '自由', 'アクティブ', 'インドア派'].map((lifestyle) {
-              final isSelected = _selectedLifestyle.contains(lifestyle);
-              return FilterChip(
-                label: Text(lifestyle),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedLifestyle.add(lifestyle);
-                    } else {
-                      _selectedLifestyle.remove(lifestyle);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                [
+                  'IT・テクノロジー',
+                  '金融',
+                  '医療・ヘルスケア',
+                  '教育',
+                  '製造業',
+                  'サービス業',
+                  '小売・流通',
+                  'メディア・エンターテイメント',
+                  'その他',
+                ].map((industry) {
+                  final isSelected = _selectedIndustry == industry;
+                  return FilterChip(
+                    label: Text(industry),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedIndustry = selected ? industry : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'ライフスタイル',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                ['朝型', '夜型', '忙しい', 'のんびり', '計画的', '自由', 'アクティブ', 'インドア派'].map((
+                  lifestyle,
+                ) {
+                  final isSelected = _selectedLifestyle.contains(lifestyle);
+                  return FilterChip(
+                    label: Text(lifestyle),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedLifestyle.add(lifestyle);
+                        } else {
+                          _selectedLifestyle.remove(lifestyle);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -537,79 +626,111 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
-          
-          const Text('学習目標', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ['日常会話', 'ビジネス英語', 'TOEIC対策', 'TOEFL対策', '英検対策', '海外旅行', '留学準備', '転職活動', 'その他'].map((goal) {
-              final isSelected = _selectedLearningGoal == goal;
-              return FilterChip(
-                label: Text(goal),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedLearningGoal = selected ? goal : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+
+          const Text(
+            '学習目標',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          
-          const SizedBox(height: 24),
-          const Text('1日の学習時間', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['5分', '10分', '15分', '30分', '45分', '1時間', '1時間以上'].map((time) {
-              final isSelected = _selectedStudyTime.contains(time);
-              return FilterChip(
-                label: Text(time),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedStudyTime.add(time);
-                      _targetStudyMinutes = '${int.tryParse(time.replaceAll(RegExp(r'[^0-9]'), '')) ?? 15}';
-                    } else {
-                      _selectedStudyTime.remove(time);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                [
+                  '日常会話',
+                  'ビジネス英語',
+                  'TOEIC対策',
+                  'TOEFL対策',
+                  '英検対策',
+                  '海外旅行',
+                  '留学準備',
+                  '転職活動',
+                  'その他',
+                ].map((goal) {
+                  final isSelected = _selectedLearningGoal == goal;
+                  return FilterChip(
+                    label: Text(goal),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedLearningGoal = selected ? goal : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('学習の課題', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '1日の学習時間',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['語彙力不足', '文法が苦手', '発音', 'リスニング', 'スピーキング', 'ライティング', '時間がない', 'モチベーション維持'].map((challenge) {
-              final isSelected = _selectedChallenges.contains(challenge);
-              return FilterChip(
-                label: Text(challenge),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedChallenges.add(challenge);
-                    } else {
-                      _selectedChallenges.remove(challenge);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                ['5分', '10分', '15分', '30分', '45分', '1時間', '1時間以上'].map((time) {
+                  final isSelected = _selectedStudyTime.contains(time);
+                  return FilterChip(
+                    label: Text(time),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedStudyTime.add(time);
+                          _targetStudyMinutes =
+                              '${int.tryParse(time.replaceAll(RegExp(r'[^0-9]'), '')) ?? 15}';
+                        } else {
+                          _selectedStudyTime.remove(time);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            '学習の課題',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                [
+                  '語彙力不足',
+                  '文法が苦手',
+                  '発音',
+                  'リスニング',
+                  'スピーキング',
+                  'ライティング',
+                  '時間がない',
+                  'モチベーション維持',
+                ].map((challenge) {
+                  final isSelected = _selectedChallenges.contains(challenge);
+                  return FilterChip(
+                    label: Text(challenge),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedChallenges.add(challenge);
+                        } else {
+                          _selectedChallenges.remove(challenge);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -627,100 +748,147 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
-          
-          const Text('お住まいの地域', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ['北海道', '東北', '関東', '中部', '関西', '中国', '四国', '九州・沖縄', '海外'].map((region) {
-              final isSelected = _selectedRegion == region;
-              return FilterChip(
-                label: Text(region),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedRegion = selected ? region : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+
+          const Text(
+            'お住まいの地域',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          
-          const SizedBox(height: 24),
-          const Text('家族構成', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['一人暮らし', '夫婦', '子供あり（小学生以下）', '子供あり（中学生以上）', '両親と同居', 'その他'].map((family) {
-              final isSelected = _selectedFamilyStructure == family;
-              return FilterChip(
-                label: Text(family),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedFamilyStructure = selected ? family : null;
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                ['北海道', '東北', '関東', '中部', '関西', '中国', '四国', '九州・沖縄', '海外'].map((
+                  region,
+                ) {
+                  final isSelected = _selectedRegion == region;
+                  return FilterChip(
+                    label: Text(region),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedRegion = selected ? region : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('英語使用場面', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ['職場', '学校', '旅行', 'オンライン', '友人との会話', '家族との会話', 'プレゼンテーション', 'メール・チャット'].map((scenario) {
-              final isSelected = _selectedEnglishUsageScenarios.contains(scenario);
-              return FilterChip(
-                label: Text(scenario),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedEnglishUsageScenarios.add(scenario);
-                    } else {
-                      _selectedEnglishUsageScenarios.remove(scenario);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+          const Text(
+            '家族構成',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          
-          const SizedBox(height: 24),
-          const Text('興味のあるトピック', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['ビジネス', 'テクノロジー', '健康・医療', '教育', '環境', 'スポーツ', 'エンターテイメント', '文化', 'ニュース', '日常生活'].map((topic) {
-              final isSelected = _selectedInterestingTopics.contains(topic);
-              return FilterChip(
-                label: Text(topic),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedInterestingTopics.add(topic);
-                    } else {
-                      _selectedInterestingTopics.remove(topic);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                [
+                  '一人暮らし',
+                  '夫婦',
+                  '子供あり（小学生以下）',
+                  '子供あり（中学生以上）',
+                  '両親と同居',
+                  'その他',
+                ].map((family) {
+                  final isSelected = _selectedFamilyStructure == family;
+                  return FilterChip(
+                    label: Text(family),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedFamilyStructure = selected ? family : null;
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            '英語使用場面',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                [
+                  '職場',
+                  '学校',
+                  '旅行',
+                  'オンライン',
+                  '友人との会話',
+                  '家族との会話',
+                  'プレゼンテーション',
+                  'メール・チャット',
+                ].map((scenario) {
+                  final isSelected = _selectedEnglishUsageScenarios.contains(
+                    scenario,
+                  );
+                  return FilterChip(
+                    label: Text(scenario),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedEnglishUsageScenarios.add(scenario);
+                        } else {
+                          _selectedEnglishUsageScenarios.remove(scenario);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            '興味のあるトピック',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                [
+                  'ビジネス',
+                  'テクノロジー',
+                  '健康・医療',
+                  '教育',
+                  '環境',
+                  'スポーツ',
+                  'エンターテイメント',
+                  '文化',
+                  'ニュース',
+                  '日常生活',
+                ].map((topic) {
+                  final isSelected = _selectedInterestingTopics.contains(topic);
+                  return FilterChip(
+                    label: Text(topic),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedInterestingTopics.add(topic);
+                        } else {
+                          _selectedInterestingTopics.remove(topic);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -738,34 +906,50 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
-          
-          const Text('学習スタイル', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+
+          const Text(
+            '学習スタイル',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['視覚的学習', '聴覚的学習', '体験的学習', '反復学習', 'ゲーム的学習', '競争的学習', '協力的学習', '自主的学習'].map((style) {
-              final isSelected = _selectedLearningStyles.contains(style);
-              return FilterChip(
-                label: Text(style),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedLearningStyles.add(style);
-                    } else {
-                      _selectedLearningStyles.remove(style);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                [
+                  '視覚的学習',
+                  '聴覚的学習',
+                  '体験的学習',
+                  '反復学習',
+                  'ゲーム的学習',
+                  '競争的学習',
+                  '協力的学習',
+                  '自主的学習',
+                ].map((style) {
+                  final isSelected = _selectedLearningStyles.contains(style);
+                  return FilterChip(
+                    label: Text(style),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedLearningStyles.add(style);
+                        } else {
+                          _selectedLearningStyles.remove(style);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('スキルレベル', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            'スキルレベル',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           ...['リスニング', 'スピーキング', 'リーディング', 'ライティング'].map((skill) {
             return Column(
@@ -776,9 +960,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
                     DropdownButton<String>(
                       value: _skillLevels[skill],
                       hint: const Text('選択'),
-                      items: ['初級', '初中級', '中級', '中上級', '上級'].map((level) {
-                        return DropdownMenuItem(value: level, child: Text(level));
-                      }).toList(),
+                      items:
+                          ['初級', '初中級', '中級', '中上級', '上級'].map((level) {
+                            return DropdownMenuItem(
+                              value: level,
+                              child: Text(level),
+                            );
+                          }).toList(),
                       onChanged: (value) {
                         setState(() {
                           if (value != null) {
@@ -793,61 +981,74 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
               ],
             );
           }),
-          
+
           const SizedBox(height: 16),
-          const Text('学習環境', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '学習環境',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['自宅', '通勤中', 'カフェ', '図書館', 'オフィス', '屋外', 'その他'].map((env) {
-              final isSelected = _selectedStudyEnvironments.contains(env);
-              return FilterChip(
-                label: Text(env),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedStudyEnvironments.add(env);
-                    } else {
-                      _selectedStudyEnvironments.remove(env);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                ['自宅', '通勤中', 'カフェ', '図書館', 'オフィス', '屋外', 'その他'].map((env) {
+                  final isSelected = _selectedStudyEnvironments.contains(env);
+                  return FilterChip(
+                    label: Text(env),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedStudyEnvironments.add(env);
+                        } else {
+                          _selectedStudyEnvironments.remove(env);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('苦手分野', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '苦手分野',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['語彙', '文法', '発音', '語順', '時制', '冠詞', '前置詞', 'イディオム'].map((weakness) {
-              final isSelected = _selectedWeakAreas.contains(weakness);
-              return FilterChip(
-                label: Text(weakness),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedWeakAreas.add(weakness);
-                    } else {
-                      _selectedWeakAreas.remove(weakness);
-                    }
-                  });
-                },
-                selectedColor: Colors.blue[100],
-                checkmarkColor: Colors.blue[800],
-              );
-            }).toList(),
+            children:
+                ['語彙', '文法', '発音', '語順', '時制', '冠詞', '前置詞', 'イディオム'].map((
+                  weakness,
+                ) {
+                  final isSelected = _selectedWeakAreas.contains(weakness);
+                  return FilterChip(
+                    label: Text(weakness),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedWeakAreas.add(weakness);
+                        } else {
+                          _selectedWeakAreas.remove(weakness);
+                        }
+                      });
+                    },
+                    selectedColor: Colors.blue[100],
+                    checkmarkColor: Colors.blue[800],
+                  );
+                }).toList(),
           ),
-          
+
           const SizedBox(height: 24),
-          const Text('英語学習のモチベーション', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Text(
+            '英語学習のモチベーション',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           TextFormField(
             maxLines: 3,

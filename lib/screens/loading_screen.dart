@@ -21,33 +21,26 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _progressController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _progressController,
-      curve: Curves.easeInOut,
-    ));
-    
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeIn,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
+
     _startGenerationProcess();
   }
 
@@ -60,19 +53,19 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   Future<void> _startGenerationProcess() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    
+
     _fadeController.forward();
-    
+
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     _progressController.forward();
-    
+
     await appProvider.loadLevels();
-    
+
     await _progressController.forward();
-    
+
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     if (mounted) {
       context.go(AppRouter.home);
     }
@@ -185,13 +178,10 @@ class _LoadingScreenState extends State<LoadingScreen>
                   if (_progressAnimation.value > 0.9) {
                     message = '学習データを準備中...';
                   }
-                  
+
                   return Text(
                     message,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
                   );
                 },
               ),
@@ -220,10 +210,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                     const Expanded(
                       child: Text(
                         'あなたの興味・関心に基づいて、より効果的な学習例文を作成しています',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ),
                   ],

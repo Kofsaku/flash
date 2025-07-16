@@ -11,7 +11,8 @@ class CategoryManagementScreen extends StatefulWidget {
   const CategoryManagementScreen({super.key});
 
   @override
-  State<CategoryManagementScreen> createState() => _CategoryManagementScreenState();
+  State<CategoryManagementScreen> createState() =>
+      _CategoryManagementScreenState();
 }
 
 class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
@@ -47,11 +48,12 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'メニュー',
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'メニュー',
+              ),
         ),
         actions: [
           IconButton(
@@ -65,7 +67,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           final filteredCategories = _getFilteredCategories(appProvider);
-          
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -91,14 +93,15 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
             decoration: InputDecoration(
               hintText: 'カテゴリーを検索...',
               prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  _searchQuery.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                      : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -117,17 +120,22 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                   ),
                   items: [
                     const DropdownMenuItem<String>(
                       value: null,
                       child: Text('すべてのレベル'),
                     ),
-                    ...appProvider.levels.map((level) => DropdownMenuItem<String>(
-                      value: level.id,
-                      child: Text(level.name),
-                    )),
+                    ...appProvider.levels.map(
+                      (level) => DropdownMenuItem<String>(
+                        value: level.id,
+                        child: Text(level.name),
+                      ),
+                    ),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -145,13 +153,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                   ),
                   items: const [
-                    DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('すべて'),
-                    ),
+                    DropdownMenuItem<String>(value: null, child: Text('すべて')),
                     DropdownMenuItem<String>(
                       value: 'completed',
                       child: Text('完了済み'),
@@ -187,10 +195,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
           if (recentCategories.isNotEmpty) ...[
             const Text(
               '最近学習したカテゴリー',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -209,10 +214,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
           if (favoriteCategories.isNotEmpty) ...[
             const Text(
               'お気に入りのあるカテゴリー',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -239,9 +241,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       margin: const EdgeInsets.only(right: 12),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: InkWell(
           onTap: () {
             context.go('${AppRouter.exampleList}?categoryId=${category.id}');
@@ -273,10 +273,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 const SizedBox(height: 2),
                 Text(
                   '${(category.progress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -353,9 +350,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         ),
         title: Text(
           category.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,10 +371,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 const SizedBox(width: 8),
                 Text(
                   '${category.completedExamples}/${category.totalExamples}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -413,27 +405,17 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               '条件に一致するカテゴリーが見つかりませんでした',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               '検索条件やフィルターを変更してみてください',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -445,9 +427,10 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   List<Category> _getFilteredCategories(AppProvider appProvider) {
     return appProvider.getFilteredCategories(
       levelId: _selectedLevelId,
-      isCompleted: _filterStatus == 'completed'
-          ? true
-          : _filterStatus == 'incomplete'
+      isCompleted:
+          _filterStatus == 'completed'
+              ? true
+              : _filterStatus == 'incomplete'
               ? false
               : null,
       searchQuery: _searchQuery,

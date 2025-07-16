@@ -7,17 +7,19 @@ import 'firebase_auth_provider.dart';
 class AppProvider extends ChangeNotifier {
   final MockDataService _mockDataService = MockDataService();
   FirebaseAuthProvider? _authProvider;
-  
+
   User? _currentUser;
   List<Level> _levels = [];
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   User? get currentUser => _authProvider?.currentUser ?? _currentUser;
   List<Level> get levels => _levels;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _authProvider?.isAuthenticated ?? (_currentUser?.isAuthenticated ?? false);
+  bool get isAuthenticated =>
+      _authProvider?.isAuthenticated ??
+      (_currentUser?.isAuthenticated ?? false);
 
   void setAuthProvider(FirebaseAuthProvider authProvider) {
     _authProvider = authProvider;
@@ -27,7 +29,8 @@ class AppProvider extends ChangeNotifier {
   Future<void> initialize() async {
     try {
       await _mockDataService.initialize();
-      _currentUser = _mockDataService.currentUser;
+      // Firebase認証を使用している場合はMockDataServiceからユーザーを読み込まない
+      // 認証状態はFirebaseAuthProviderが管理する
       _levels = _mockDataService.levels;
       _errorMessage = null;
       notifyListeners();
@@ -195,13 +198,13 @@ class AppProvider extends ChangeNotifier {
     try {
       final level = await getLevel(levelId);
       if (level == null) return [];
-      
+
       List<Example> allExamples = [];
-      
+
       for (final category in level.categories) {
         allExamples.addAll(category.examples);
       }
-      
+
       allExamples.shuffle();
       return allExamples;
     } catch (e) {
@@ -211,7 +214,10 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateExampleCompletion(String exampleId, bool isCompleted) async {
+  Future<void> updateExampleCompletion(
+    String exampleId,
+    bool isCompleted,
+  ) async {
     try {
       await _mockDataService.updateExampleCompletion(exampleId, isCompleted);
       _levels = _mockDataService.levels;
@@ -278,11 +284,11 @@ class AppProvider extends ChangeNotifier {
 
   List<Category> searchCategories(String query) {
     if (query.isEmpty) return getAllCategories();
-    
+
     final allCategories = getAllCategories();
     return allCategories.where((category) {
       return category.name.toLowerCase().contains(query.toLowerCase()) ||
-             category.description.toLowerCase().contains(query.toLowerCase());
+          category.description.toLowerCase().contains(query.toLowerCase());
     }).toList();
   }
 
@@ -292,44 +298,55 @@ class AppProvider extends ChangeNotifier {
     String? searchQuery,
   }) {
     List<Category> categories;
-    
+
     if (levelId != null) {
       categories = getCategoriesByLevel(levelId);
     } else {
       categories = getAllCategories();
     }
-    
+
     if (isCompleted != null) {
-      categories = categories.where((category) => category.isCompleted == isCompleted).toList();
+      categories =
+          categories
+              .where((category) => category.isCompleted == isCompleted)
+              .toList();
     }
-    
+
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      categories = categories.where((category) {
-        return category.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-               category.description.toLowerCase().contains(searchQuery.toLowerCase());
-      }).toList();
+      categories =
+          categories.where((category) {
+            return category.name.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                ) ||
+                category.description.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                );
+          }).toList();
     }
-    
+
     return categories;
   }
 
   Map<String, dynamic> getCategoryStatistics() {
     final allCategories = getAllCategories();
-    final completedCategories = allCategories.where((cat) => cat.isCompleted).length;
+    final completedCategories =
+        allCategories.where((cat) => cat.isCompleted).length;
     final totalCategories = allCategories.length;
-    
+
     Map<String, int> levelCategoryCounts = {};
     Map<String, int> levelCompletedCounts = {};
-    
+
     for (final level in _levels) {
       levelCategoryCounts[level.name] = level.categories.length;
-      levelCompletedCounts[level.name] = level.categories.where((cat) => cat.isCompleted).length;
+      levelCompletedCounts[level.name] =
+          level.categories.where((cat) => cat.isCompleted).length;
     }
-    
+
     return {
       'totalCategories': totalCategories,
       'completedCategories': completedCategories,
-      'completionRate': totalCategories > 0 ? completedCategories / totalCategories : 0.0,
+      'completionRate':
+          totalCategories > 0 ? completedCategories / totalCategories : 0.0,
       'levelCategoryCounts': levelCategoryCounts,
       'levelCompletedCounts': levelCompletedCounts,
     };
@@ -344,33 +361,41 @@ class AppProvider extends ChangeNotifier {
 
   List<Category> getRecentlyStudiedCategories() {
     final allCategories = getAllCategories();
-    final categoriesWithRecentActivity = allCategories.where((category) {
-      return category.examples.any((example) => 
-        example.completedAt != null &&
-        DateTime.now().difference(example.completedAt!).inDays <= 7
-      );
-    }).toList();
-    
+    final categoriesWithRecentActivity =
+        allCategories.where((category) {
+          return category.examples.any(
+            (example) =>
+                example.completedAt != null &&
+                DateTime.now().difference(example.completedAt!).inDays <= 7,
+          );
+        }).toList();
+
     categoriesWithRecentActivity.sort((a, b) {
       final aLatest = a.examples
           .where((e) => e.completedAt != null)
           .map((e) => e.completedAt!)
-          .fold<DateTime?>(null, (latest, date) => 
-            latest == null || date.isAfter(latest) ? date : latest);
-      
+          .fold<DateTime?>(
+            null,
+            (latest, date) =>
+                latest == null || date.isAfter(latest) ? date : latest,
+          );
+
       final bLatest = b.examples
           .where((e) => e.completedAt != null)
           .map((e) => e.completedAt!)
-          .fold<DateTime?>(null, (latest, date) => 
-            latest == null || date.isAfter(latest) ? date : latest);
-      
+          .fold<DateTime?>(
+            null,
+            (latest, date) =>
+                latest == null || date.isAfter(latest) ? date : latest,
+          );
+
       if (aLatest == null && bLatest == null) return 0;
       if (aLatest == null) return 1;
       if (bLatest == null) return -1;
-      
+
       return bLatest.compareTo(aLatest);
     });
-    
+
     return categoriesWithRecentActivity;
   }
 }

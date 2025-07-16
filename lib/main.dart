@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'providers/firebase_auth_provider.dart';
@@ -9,12 +8,10 @@ import 'router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Firebase 初期化
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const FlashCompositionApp());
 }
 
@@ -26,14 +23,6 @@ class FlashCompositionApp extends StatefulWidget {
 }
 
 class _FlashCompositionAppState extends State<FlashCompositionApp> {
-  late final GoRouter _router;
-
-  @override
-  void initState() {
-    super.initState();
-    _router = AppRouter.createRouter();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -41,7 +30,9 @@ class _FlashCompositionAppState extends State<FlashCompositionApp> {
         ChangeNotifierProvider(create: (context) => FirebaseAuthProvider()),
         ChangeNotifierProvider(create: (context) => AppProvider()),
       ],
-      child: MaterialApp.router(
+      child: Consumer<FirebaseAuthProvider>(
+        builder: (context, authProvider, child) {
+          return MaterialApp.router(
             title: '瞬間英作文',
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
@@ -78,8 +69,10 @@ class _FlashCompositionAppState extends State<FlashCompositionApp> {
                 ),
               ),
             ),
-        routerConfig: _router,
-        debugShowCheckedModeBanner: false,
+            routerConfig: AppRouter.createRouter(),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }

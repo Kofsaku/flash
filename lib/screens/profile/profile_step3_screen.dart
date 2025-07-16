@@ -5,6 +5,7 @@ import '../../providers/app_provider.dart';
 import '../../models/user.dart';
 import '../../router.dart';
 import '../../widgets/progress_indicator.dart';
+import '../../widgets/app_drawer.dart';
 
 class ProfileStep3Screen extends StatefulWidget {
   const ProfileStep3Screen({super.key});
@@ -30,7 +31,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
   void _loadExistingProfile() {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final profile = appProvider.currentUser?.profile;
-    
+
     if (profile != null) {
       // Loading existing profile data
       setState(() {
@@ -52,6 +53,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: Consumer<AppProvider>(
           builder: (context, appProvider, child) {
@@ -59,10 +61,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  const StepProgressIndicator(
-                    currentStep: 3,
-                    totalSteps: 5,
-                  ),
+                  const StepProgressIndicator(currentStep: 3, totalSteps: 5),
                   const SizedBox(height: 32),
                   Expanded(
                     child: SingleChildScrollView(
@@ -80,10 +79,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                           const SizedBox(height: 8),
                           const Text(
                             'あなたの学習環境と目標を教えてください。\n継続しやすい学習プランを提案します。',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 32),
                           _buildRadioSection(
@@ -91,7 +87,8 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                             '任意',
                             appProvider.mockDataService.learningGoals,
                             _selectedLearningGoal,
-                            (value) => setState(() => _selectedLearningGoal = value),
+                            (value) =>
+                                setState(() => _selectedLearningGoal = value),
                           ),
                           const SizedBox(height: 24),
                           _buildCheckboxSection(
@@ -115,7 +112,9 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                             '任意',
                             appProvider.mockDataService.targetStudyMinutes,
                             _selectedTargetStudyMinutes,
-                            (value) => setState(() => _selectedTargetStudyMinutes = value),
+                            (value) => setState(
+                              () => _selectedTargetStudyMinutes = value,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           _buildCheckboxSection(
@@ -205,23 +204,26 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: required.contains('必須') ? Colors.red[100] : Colors.grey[100],
+                color:
+                    required.contains('必須')
+                        ? Colors.red[100]
+                        : Colors.grey[100],
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 required,
                 style: TextStyle(
                   fontSize: 12,
-                  color: required.contains('必須') ? Colors.red[600] : Colors.grey[600],
+                  color:
+                      required.contains('必須')
+                          ? Colors.red[600]
+                          : Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -257,23 +259,26 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: required.contains('必須') ? Colors.red[100] : Colors.grey[100],
+                color:
+                    required.contains('必須')
+                        ? Colors.red[100]
+                        : Colors.grey[100],
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 required,
                 style: TextStyle(
                   fontSize: 12,
-                  color: required.contains('必須') ? Colors.red[600] : Colors.grey[600],
+                  color:
+                      required.contains('必須')
+                          ? Colors.red[600]
+                          : Colors.grey[600],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -302,21 +307,23 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
   void _handleNext() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final currentProfile = appProvider.currentUser?.profile;
-    
+
     // Saving profile data
-    
-    final updatedProfile = currentProfile?.copyWith(
-      learningGoal: _selectedLearningGoal,
-      studyTime: _selectedStudyTimes,
-      targetStudyMinutes: _selectedTargetStudyMinutes,
-      challenges: _selectedChallenges,
-    ) ?? Profile(
-      learningGoal: _selectedLearningGoal,
-      studyTime: _selectedStudyTimes,
-      targetStudyMinutes: _selectedTargetStudyMinutes,
-      challenges: _selectedChallenges,
-    );
-    
+
+    final updatedProfile =
+        currentProfile?.copyWith(
+          learningGoal: _selectedLearningGoal,
+          studyTime: _selectedStudyTimes,
+          targetStudyMinutes: _selectedTargetStudyMinutes,
+          challenges: _selectedChallenges,
+        ) ??
+        Profile(
+          learningGoal: _selectedLearningGoal,
+          studyTime: _selectedStudyTimes,
+          targetStudyMinutes: _selectedTargetStudyMinutes,
+          challenges: _selectedChallenges,
+        );
+
     final success = await appProvider.saveProfile(updatedProfile);
     if (success && mounted) {
       context.go(AppRouter.profileStep4);

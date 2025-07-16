@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../providers/firebase_auth_provider.dart';
 import '../../models/user.dart';
 import '../../router.dart';
 import '../../widgets/progress_indicator.dart';
+import '../../widgets/app_drawer.dart';
 
 class ProfileStep1Screen extends StatefulWidget {
   const ProfileStep1Screen({super.key});
@@ -27,9 +29,12 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
   }
 
   void _loadExistingProfile() {
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final profile = appProvider.currentUser?.profile;
-    
+    final authProvider = Provider.of<FirebaseAuthProvider>(
+      context,
+      listen: false,
+    );
+    final profile = authProvider.currentUser?.profile;
+
     if (profile != null) {
       // Loading existing profile data
       setState(() {
@@ -48,17 +53,15 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
+      drawer: const AppDrawer(),
       body: SafeArea(
-        child: Consumer<AppProvider>(
-          builder: (context, appProvider, child) {
+        child: Consumer<FirebaseAuthProvider>(
+          builder: (context, authProvider, child) {
             return Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  const StepProgressIndicator(
-                    currentStep: 1,
-                    totalSteps: 5,
-                  ),
+                  const StepProgressIndicator(currentStep: 1, totalSteps: 5),
                   const SizedBox(height: 32),
                   Expanded(
                     child: SingleChildScrollView(
@@ -76,34 +79,43 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
                           const SizedBox(height: 8),
                           const Text(
                             'あなたの基本情報を教えてください。\nパーソナライズされた学習体験を提供します。',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 32),
                           _buildSection(
                             '年齢層',
                             '任意',
-                            appProvider.mockDataService.ageGroups,
+                            ['10代', '20代', '30代', '40代', '50代', '60代以上'],
                             _selectedAgeGroup,
-                            (value) => setState(() => _selectedAgeGroup = value),
+                            (value) =>
+                                setState(() => _selectedAgeGroup = value),
                           ),
                           const SizedBox(height: 24),
                           _buildSection(
                             '職業',
                             '任意',
-                            appProvider.mockDataService.occupations,
+                            [
+                              '学生',
+                              '会社員',
+                              '公務員',
+                              '自営業',
+                              '専業主婦/主夫',
+                              'フリーランス',
+                              '退職者',
+                              'その他',
+                            ],
                             _selectedOccupation,
-                            (value) => setState(() => _selectedOccupation = value),
+                            (value) =>
+                                setState(() => _selectedOccupation = value),
                           ),
                           const SizedBox(height: 24),
                           _buildSection(
                             '英語学習歴',
                             '任意',
-                            appProvider.mockDataService.englishLevels,
+                            ['初級', '初中級', '中級', '中上級', '上級'],
                             _selectedEnglishLevel,
-                            (value) => setState(() => _selectedEnglishLevel = value),
+                            (value) =>
+                                setState(() => _selectedEnglishLevel = value),
                           ),
                         ],
                       ),
@@ -154,10 +166,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
@@ -198,28 +207,33 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
   }
 
   void _handleNext() async {
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final currentProfile = appProvider.currentUser?.profile;
-    
-    // Saving profile data
-    
-    final updatedProfile = currentProfile?.copyWith(
-      ageGroup: _selectedAgeGroup,
-      occupation: _selectedOccupation,
-      englishLevel: _selectedEnglishLevel,
-    ) ?? Profile(
-      ageGroup: _selectedAgeGroup,
-      occupation: _selectedOccupation,
-      englishLevel: _selectedEnglishLevel,
+    final authProvider = Provider.of<FirebaseAuthProvider>(
+      context,
+      listen: false,
     );
-    
-    final success = await appProvider.saveProfile(updatedProfile);
+    final currentProfile = authProvider.currentUser?.profile;
+
+    // Saving profile data
+
+    final updatedProfile =
+        currentProfile?.copyWith(
+          ageGroup: _selectedAgeGroup,
+          occupation: _selectedOccupation,
+          englishLevel: _selectedEnglishLevel,
+        ) ??
+        Profile(
+          ageGroup: _selectedAgeGroup,
+          occupation: _selectedOccupation,
+          englishLevel: _selectedEnglishLevel,
+        );
+
+    final success = await authProvider.saveProfile(updatedProfile);
     if (success && mounted) {
       context.go(AppRouter.profileStep2);
-    } else if (appProvider.errorMessage != null && mounted) {
+    } else if (authProvider.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(appProvider.errorMessage!),
+          content: Text(authProvider.errorMessage!),
           backgroundColor: Colors.red,
         ),
       );

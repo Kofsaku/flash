@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../providers/firebase_auth_provider.dart';
 import '../models/level.dart';
 import '../router.dart';
 import '../widgets/app_drawer.dart';
@@ -22,11 +23,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'メニュー',
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'メニュー',
+              ),
         ),
         actions: [
           IconButton(
@@ -65,68 +67,92 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildTodayProgress(AppProvider appProvider) {
     final todayCompleted = _getTodayCompleted(appProvider);
-    final todayTarget = appProvider.currentUser?.dailyGoal ?? 10; // ユーザー設定の目標値
+    final authProvider = Provider.of<FirebaseAuthProvider>(
+      context,
+      listen: false,
+    );
+    final user = authProvider.currentUser;
+    final appUser = appProvider.currentUser;
+    final todayTarget = user?.dailyGoal ?? 10; // ユーザー設定の目標値
+    
+    // 徹底的なデバッグ
+    print('🔍 ========== DAILY GOAL DEBUG ==========');
+    print('🔍 authProvider.currentUser = $user');
+    print('🔍 authProvider.currentUser?.dailyGoal = ${user?.dailyGoal}');
+    print('🔍 appProvider.currentUser = $appUser');
+    print('🔍 appProvider.currentUser?.dailyGoal = ${appUser?.dailyGoal}');
+    print('🔍 todayTarget (final value) = $todayTarget');
+    print('🔍 authProvider.isAuthenticated = ${authProvider.isAuthenticated}');
+    print('🔍 user?.id = ${user?.id}');
+    print('🔍 user?.email = ${user?.email}');
+    print('🔍 user?.name = ${user?.name}');
+    print('🔍 =====================================');
     final progress = (todayCompleted / todayTarget).clamp(0.0, 1.0);
-    final user = appProvider.currentUser;
     final streak = _getStreakDays(appProvider);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
+    return InkWell(
+      onTap: () => context.go(AppRouter.dailyGoalSetting),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'こんにちは、${user?.name ?? 'ゲスト'}さん',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'こんにちは、${user?.name ?? 'ニックネームを設定してください'}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        '今日の学習目標: $todayCompleted / $todayTarget 例文',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          '今日の学習目標: $todayCompleted / $todayTarget 例文',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () => context.go(AppRouter.dailyGoalSetting),
-                        child: Icon(
-                          Icons.settings,
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.edit,
                           size: 16,
-                          color: Colors.grey[600],
+                          color: Colors.grey[500],
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
               if (streak > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange[100],
                     borderRadius: BorderRadius.circular(16),
@@ -174,13 +200,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
 
   Widget _buildWeeklyActivity(AppProvider appProvider) {
     final weekData = _getWeeklyData(appProvider);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -200,10 +227,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             '今週の学習活動',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -216,12 +240,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: day['completed'] > 0
-                            ? Colors.blue.withValues(alpha: day['completed'] / 20)
-                            : Colors.grey[100],
+                        color:
+                            day['completed'] > 0
+                                ? Colors.blue.withValues(
+                                  alpha: day['completed'] / 20,
+                                )
+                                : Colors.grey[100],
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: day['isToday'] ? Colors.blue : Colors.transparent,
+                          color:
+                              day['isToday'] ? Colors.blue : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -231,7 +259,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: day['completed'] > 0 ? Colors.blue[800] : Colors.grey,
+                            color:
+                                day['completed'] > 0
+                                    ? Colors.blue[800]
+                                    : Colors.grey,
                           ),
                         ),
                       ),
@@ -242,7 +273,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         color: day['isToday'] ? Colors.blue : Colors.grey[600],
-                        fontWeight: day['isToday'] ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            day['isToday']
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -271,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<Map<String, dynamic>> _getWeeklyData(AppProvider appProvider) {
     final days = ['月', '火', '水', '木', '金', '土', '日'];
     final today = DateTime.now().weekday - 1;
-    
+
     // モックデータ: 過去の学習パターンを生成
     final data = List.generate(7, (index) {
       if (index == today) {
@@ -284,12 +318,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return 0;
       }
     });
-    
-    return List.generate(7, (index) => {
-      'name': days[index],
-      'completed': data[index],
-      'isToday': index == today,
-    });
+
+    return List.generate(
+      7,
+      (index) => {
+        'name': days[index],
+        'completed': data[index],
+        'isToday': index == today,
+      },
+    );
   }
 
   int _getAccuracyRate(AppProvider appProvider) {
@@ -299,53 +336,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   List<Map<String, dynamic>> _getWeakCategories(AppProvider appProvider) {
     List<Map<String, dynamic>> weakCategories = [];
-    
+
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
           if (category.examples.isEmpty) continue;
-          
-          final completedExamples = category.examples.where((e) => e.isCompleted == true).length;
+
+          final completedExamples =
+              category.examples.where((e) => e.isCompleted == true).length;
           final totalExamples = category.examples.length;
           final accuracy = _getCategoryAccuracy(category);
-          
+
           // 苦手条件: 正解率が70%以下、または完了率が50%以下
-          if ((accuracy < 70 && completedExamples > 0) || 
+          if ((accuracy < 70 && completedExamples > 0) ||
               (totalExamples > 0 && completedExamples / totalExamples < 0.5)) {
             weakCategories.add({
               'id': category.id,
               'name': category.name,
               'accuracyRate': accuracy,
-              'completionRate': totalExamples > 0 ? (completedExamples / totalExamples * 100).toInt() : 0,
+              'completionRate':
+                  totalExamples > 0
+                      ? (completedExamples / totalExamples * 100).toInt()
+                      : 0,
               'priority': accuracy < 50 ? 'high' : 'medium',
             });
           }
         }
       }
-      
+
       // 正解率の低い順にソート
-      weakCategories.sort((a, b) => (a['accuracyRate'] as int).compareTo(b['accuracyRate'] as int));
+      weakCategories.sort(
+        (a, b) =>
+            (a['accuracyRate'] as int).compareTo(b['accuracyRate'] as int),
+      );
     } catch (e) {
       // Error occurred while calculating weak categories
     }
-    
+
     return weakCategories;
   }
-  
+
   int _getCategoryAccuracy(dynamic category) {
     if (category.examples == null || category.examples.isEmpty) return 100;
-    
-    final completedExamples = category.examples.where((e) => e.isCompleted == true);
+
+    final completedExamples = category.examples.where(
+      (e) => e.isCompleted == true,
+    );
     if (completedExamples.isEmpty) return 100; // 未学習の場合は100%として扱う
-    
+
     // モックデータとして、カテゴリー名に基づいて正解率を計算
     final hash = category.name.hashCode;
     return 60 + (hash.abs() % 30); // 60-89%の範囲でランダムな正解率
   }
-  
+
   List<Map<String, dynamic>> _getRecommendations(AppProvider appProvider) {
     List<Map<String, dynamic>> recommendations = [];
-    
+
     try {
       // 1. 苦手カテゴリーの復習
       final weakCategories = _getWeakCategories(appProvider);
@@ -356,10 +402,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'subtitle': '正解率: ${weak['accuracyRate']}%',
           'icon': Icons.refresh,
           'color': Colors.orange,
-          'action': () => context.go('${AppRouter.exampleList}?categoryId=${weak['id']}'),
+          'action':
+              () => context.go(
+                '${AppRouter.exampleList}?categoryId=${weak['id']}',
+              ),
         });
       }
-      
+
       // 2. 未完了のカテゴリー
       final incompleteCategories = _getIncompleteCategories(appProvider);
       for (final incomplete in incompleteCategories.take(2)) {
@@ -369,10 +418,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'subtitle': '進捗: ${incomplete['completionRate']}%',
           'icon': Icons.play_arrow,
           'color': Colors.blue,
-          'action': () => context.go('${AppRouter.exampleList}?categoryId=${incomplete['id']}'),
+          'action':
+              () => context.go(
+                '${AppRouter.exampleList}?categoryId=${incomplete['id']}',
+              ),
         });
       }
-      
+
       // 3. お気に入りの復習
       final favoriteCategories = _getFavoriteCategories(appProvider);
       if (favoriteCategories.isNotEmpty) {
@@ -386,10 +438,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'action': () => context.go(AppRouter.favorites),
         });
       }
-      
+
       // 4. 今日の目標達成のための提案
       final todayCompleted = _getTodayCompleted(appProvider);
-      final todayTarget = appProvider.currentUser?.dailyGoal ?? 10;
+      final authProvider = Provider.of<FirebaseAuthProvider>(
+        context,
+        listen: false,
+      );
+      final todayTarget = authProvider.currentUser?.dailyGoal ?? 10;
       if (todayCompleted < todayTarget) {
         final remaining = todayTarget - todayCompleted;
         recommendations.add({
@@ -404,22 +460,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       // Error occurred while getting recommendations
     }
-    
+
     return recommendations;
   }
-  
+
   List<Map<String, dynamic>> _getIncompleteCategories(AppProvider appProvider) {
     List<Map<String, dynamic>> incomplete = [];
-    
+
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
           if (category.examples.isEmpty) continue;
-          
-          final completedExamples = category.examples.where((e) => e.isCompleted == true).length;
+
+          final completedExamples =
+              category.examples.where((e) => e.isCompleted == true).length;
           final totalExamples = category.examples.length;
-          final completionRate = totalExamples > 0 ? (completedExamples / totalExamples * 100).toInt() : 0;
-          
+          final completionRate =
+              totalExamples > 0
+                  ? (completedExamples / totalExamples * 100).toInt()
+                  : 0;
+
           // 未完了条件: 完了率が80%以下で、1つ以上は完了している
           if (completionRate < 80 && completedExamples > 0) {
             incomplete.add({
@@ -430,25 +490,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         }
       }
-      
+
       // 完了率の高い順にソート（続けやすいものから）
-      incomplete.sort((a, b) => (b['completionRate'] as int).compareTo(a['completionRate'] as int));
+      incomplete.sort(
+        (a, b) =>
+            (b['completionRate'] as int).compareTo(a['completionRate'] as int),
+      );
     } catch (e) {
       // Error occurred while getting incomplete categories
     }
-    
+
     return incomplete;
   }
-  
+
   List<Map<String, dynamic>> _getFavoriteCategories(AppProvider appProvider) {
     Map<String, Map<String, dynamic>> favoriteCounts = {};
-    
+
     try {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
           if (category.examples.isEmpty) continue;
-          
-          final favoriteCount = category.examples.where((e) => e.isFavorite == true).length;
+
+          final favoriteCount =
+              category.examples.where((e) => e.isFavorite == true).length;
           if (favoriteCount > 0) {
             final categoryId = category.id;
             favoriteCounts[categoryId] = {
@@ -459,10 +523,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         }
       }
-      
+
       final result = favoriteCounts.values.toList();
       result.sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
-      
+
       return result;
     } catch (e) {
       // Error occurred while getting favorite categories
@@ -493,22 +557,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text(
                 'レベル別進捗',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () => context.go(AppRouter.home),
-                child: const Text(
-                  'すべて見る',
-                  style: TextStyle(fontSize: 12),
-                ),
+                child: const Text('すべて見る', style: TextStyle(fontSize: 12)),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          ...appProvider.levels.take(3).map((level) => _buildCompactLevelProgress(level)),
+          ...appProvider.levels
+              .take(3)
+              .map((level) => _buildCompactLevelProgress(level)),
         ],
       ),
     );
@@ -561,10 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Text(
                         '${level.completedExamples}/${level.totalExamples}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -592,7 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final totalExamples = _getTotalExamples(appProvider);
     final favoriteCount = _getTotalFavorites(appProvider);
     final accuracyRate = _getAccuracyRate(appProvider);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -612,10 +669,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             '学習統計',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -669,13 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: color,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
@@ -707,79 +755,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(width: 8),
               const Text(
                 'おすすめ',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          ...recommendations.take(4).map((recommendation) => 
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: InkWell(
-                onTap: recommendation['action'],
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: recommendation['color'].withValues(alpha: 0.1),
+          ...recommendations
+              .take(4)
+              .map(
+                (recommendation) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: InkWell(
+                    onTap: recommendation['action'],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: recommendation['color'].withValues(alpha: 0.3),
-                      width: 1,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: recommendation['color'].withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: recommendation['color'].withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: recommendation['color'].withValues(
+                                alpha: 0.2,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              recommendation['icon'],
+                              color: recommendation['color'],
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  recommendation['title'],
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: recommendation['color'],
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  recommendation['subtitle'],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            color: recommendation['color'].withValues(
+                              alpha: 0.7,
+                            ),
+                            size: 16,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: recommendation['color'].withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          recommendation['icon'],
-                          color: recommendation['color'],
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              recommendation['title'],
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: recommendation['color'],
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              recommendation['subtitle'],
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        color: recommendation['color'].withValues(alpha: 0.7),
-                        size: 16,
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
-          ),
         ],
       ),
     );
@@ -803,7 +854,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       for (final level in appProvider.levels) {
         for (final category in level.categories) {
           if (category.examples.isNotEmpty) {
-            total += category.examples.where((e) => e.isFavorite == true).length;
+            total +=
+                category.examples.where((e) => e.isFavorite == true).length;
           }
         }
       }
@@ -825,7 +877,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return total;
   }
 
-
   Color _getLevelColor(int order) {
     switch (order) {
       case 1:
@@ -844,6 +895,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Colors.grey;
     }
   }
-
-
 }

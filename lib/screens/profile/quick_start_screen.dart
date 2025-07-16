@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../models/user.dart';
 import '../../router.dart';
+import '../../widgets/app_drawer.dart';
 
 class QuickStartScreen extends StatefulWidget {
   const QuickStartScreen({super.key});
@@ -25,6 +26,7 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: Consumer<AppProvider>(
           builder: (context, appProvider, child) {
@@ -58,7 +60,11 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.flash_on, color: Colors.blue[600], size: 20),
+                                    Icon(
+                                      Icons.flash_on,
+                                      color: Colors.blue[600],
+                                      size: 20,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(
                                       'クイックスタート',
@@ -86,21 +92,24 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
                             '年齢層',
                             appProvider.mockDataService.ageGroups,
                             _selectedAgeGroup,
-                            (value) => setState(() => _selectedAgeGroup = value),
+                            (value) =>
+                                setState(() => _selectedAgeGroup = value),
                           ),
                           const SizedBox(height: 24),
                           _buildSection(
                             '英語学習歴',
                             appProvider.mockDataService.englishLevels,
                             _selectedEnglishLevel,
-                            (value) => setState(() => _selectedEnglishLevel = value),
+                            (value) =>
+                                setState(() => _selectedEnglishLevel = value),
                           ),
                           const SizedBox(height: 24),
                           _buildSection(
                             '学習目標',
                             appProvider.mockDataService.learningGoals,
                             _selectedLearningGoal,
-                            (value) => setState(() => _selectedLearningGoal = value),
+                            (value) =>
+                                setState(() => _selectedLearningGoal = value),
                           ),
                           const SizedBox(height: 32),
                           Container(
@@ -115,7 +124,11 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.info_outline, color: Colors.grey[600], size: 16),
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: Colors.grey[600],
+                                      size: 16,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(
                                       'スマートデフォルト機能',
@@ -207,10 +220,7 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         ...options.map((option) {
@@ -235,16 +245,16 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
 
   void _handleQuickStart() async {
     final appProvider = Provider.of<AppProvider>(context, listen: false);
-    
+
     // Creating quick profile
-    
+
     // Create minimal profile with smart defaults
     final quickProfile = Profile(
       // Required selections
       ageGroup: _selectedAgeGroup,
       englishLevel: _selectedEnglishLevel,
       learningGoal: _selectedLearningGoal,
-      
+
       // Smart defaults based on popularity
       occupation: '会社員',
       targetStudyMinutes: '15分',
@@ -253,7 +263,7 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
       studyTime: ['朝（6-9時）'],
       lifestyle: ['健康志向'],
       challenges: ['継続するのが難しい'],
-      
+
       // Optional fields left empty for later completion
       region: null,
       familyStructure: null,
@@ -267,9 +277,9 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
       correctionStyle: null,
       encouragementFrequency: null,
     );
-    
+
     final success = await appProvider.saveProfile(quickProfile);
-    
+
     if (success && mounted) {
       context.go(AppRouter.loading);
     } else if (appProvider.errorMessage != null && mounted) {

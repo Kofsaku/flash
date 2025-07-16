@@ -17,7 +17,8 @@ class Level {
     this.completedExamples = 0,
   });
 
-  double get progress => totalExamples > 0 ? completedExamples / totalExamples : 0.0;
+  double get progress =>
+      totalExamples > 0 ? completedExamples / totalExamples : 0.0;
 
   Level copyWith({
     String? id,
@@ -57,9 +58,11 @@ class Level {
       name: json['name'],
       description: json['description'],
       order: json['order'],
-      categories: (json['categories'] as List<dynamic>?)
-          ?.map((e) => Category.fromJson(e))
-          .toList() ?? [],
+      categories:
+          (json['categories'] as List<dynamic>?)
+              ?.map((e) => Category.fromJson(e))
+              .toList() ??
+          [],
       totalExamples: json['totalExamples'] ?? 0,
       completedExamples: json['completedExamples'] ?? 0,
     );
@@ -87,8 +90,10 @@ class Category {
     this.completedExamples = 0,
   });
 
-  double get progress => totalExamples > 0 ? completedExamples / totalExamples : 0.0;
-  bool get isCompleted => completedExamples >= totalExamples && totalExamples > 0;
+  double get progress =>
+      totalExamples > 0 ? completedExamples / totalExamples : 0.0;
+  bool get isCompleted =>
+      completedExamples >= totalExamples && totalExamples > 0;
 
   Category copyWith({
     String? id,
@@ -132,9 +137,11 @@ class Category {
       description: json['description'],
       levelId: json['levelId'],
       order: json['order'],
-      examples: (json['examples'] as List<dynamic>?)
-          ?.map((e) => Example.fromJson(e))
-          .toList() ?? [],
+      examples:
+          (json['examples'] as List<dynamic>?)
+              ?.map((e) => Example.fromJson(e))
+              .toList() ??
+          [],
       totalExamples: json['totalExamples'] ?? 0,
       completedExamples: json['completedExamples'] ?? 0,
     );
@@ -218,9 +225,10 @@ class Example {
       order: json['order'],
       isCompleted: json['isCompleted'] ?? false,
       isFavorite: json['isFavorite'] ?? false,
-      completedAt: json['completedAt'] != null 
-          ? DateTime.parse(json['completedAt'])
-          : null,
+      completedAt:
+          json['completedAt'] != null
+              ? DateTime.parse(json['completedAt'])
+              : null,
     );
   }
 }
