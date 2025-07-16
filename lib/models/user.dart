@@ -5,6 +5,7 @@ class User {
   final bool isAuthenticated;
   final Profile? profile;
   final int dailyGoal;
+  final DateTime? createdAt;
 
   User({
     required this.id,
@@ -13,6 +14,7 @@ class User {
     this.isAuthenticated = false,
     this.profile,
     this.dailyGoal = 10,
+    this.createdAt,
   });
 
   User copyWith({
@@ -22,6 +24,7 @@ class User {
     bool? isAuthenticated,
     Profile? profile,
     int? dailyGoal,
+    DateTime? createdAt,
   }) {
     return User(
       id: id ?? this.id,
@@ -30,6 +33,7 @@ class User {
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       profile: profile ?? this.profile,
       dailyGoal: dailyGoal ?? this.dailyGoal,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -41,6 +45,7 @@ class User {
       'isAuthenticated': isAuthenticated,
       'profile': profile?.toJson(),
       'dailyGoal': dailyGoal,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 
@@ -53,6 +58,9 @@ class User {
       profile:
           json['profile'] != null ? Profile.fromJson(json['profile']) : null,
       dailyGoal: json['dailyGoal'] ?? 10,
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt'])
+          : null,
     );
   }
 }

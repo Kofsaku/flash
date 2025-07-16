@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/level.dart';
+import '../models/user_progress.dart';
 import '../services/mock_data_service.dart';
+import '../services/user_progress_service.dart';
 import 'firebase_auth_provider.dart';
 
 class AppProvider extends ChangeNotifier {
   final MockDataService _mockDataService = MockDataService();
+  final UserProgressService _progressService = UserProgressService();
   FirebaseAuthProvider? _authProvider;
 
   User? _currentUser;
   List<Level> _levels = [];
+  UserProgress? _userProgress;
   bool _isLoading = false;
   String? _errorMessage;
 
   User? get currentUser => _authProvider?.currentUser ?? _currentUser;
   List<Level> get levels => _levels;
+  UserProgress? get userProgress => _userProgress;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated =>
@@ -23,6 +28,17 @@ class AppProvider extends ChangeNotifier {
 
   void setAuthProvider(FirebaseAuthProvider authProvider) {
     _authProvider = authProvider;
+    
+    // 認証状態変更時のコールバックを設定
+    authProvider.setOnAuthStateChanged(() {
+      if (authProvider.isAuthenticated) {
+        _loadUserProgress();
+        startProgressWatch();
+      } else {
+        _userProgress = null;
+      }
+    });
+    
     notifyListeners();
   }
 
@@ -32,6 +48,12 @@ class AppProvider extends ChangeNotifier {
       // Firebase認証を使用している場合はMockDataServiceからユーザーを読み込まない
       // 認証状態はFirebaseAuthProviderが管理する
       _levels = _mockDataService.levels;
+      
+      // Firebase認証使用時はユーザー進捗を読み込み
+      if (_authProvider?.isAuthenticated == true) {
+        await _loadUserProgress();
+      }
+      
       _errorMessage = null;
       notifyListeners();
     } catch (e) {
@@ -163,8 +185,8 @@ class AppProvider extends ChangeNotifier {
 
   Future<List<Example>> getExamples(String categoryId) async {
     try {
-      // パーソナライズ例文を含む例文リストを取得
-      return await _mockDataService.getPersonalizedExamples(categoryId);
+      // 基本例文を取得
+      return await _mockDataService.getExamples(categoryId);
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
@@ -172,7 +194,7 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  /// 基本例文のみを取得（パーソナライゼーション無し）
+  /// 基本例文を取得
   Future<List<Example>> getBaseExamples(String categoryId) async {
     try {
       return await _mockDataService.getBaseExamples(categoryId);
@@ -183,16 +205,6 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  /// パーソナライズ例文を含む例文リストを取得（明示的メソッド）
-  Future<List<Example>> getPersonalizedExamples(String categoryId) async {
-    try {
-      return await _mockDataService.getPersonalizedExamples(categoryId);
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return [];
-    }
-  }
 
   Future<List<Example>> getMixedExamples(String levelId) async {
     try {
@@ -219,8 +231,20 @@ class AppProvider extends ChangeNotifier {
     bool isCompleted,
   ) async {
     try {
-      await _mockDataService.updateExampleCompletion(exampleId, isCompleted);
-      _levels = _mockDataService.levels;
+      // Firebase認証使用時
+      if (_authProvider?.isAuthenticated == true) {
+        if (isCompleted) {
+          await _progressService.markExampleCompleted(exampleId);
+        } else {
+          await _progressService.resetExampleProgress(exampleId);
+        }
+        await _loadUserProgress();
+        await _syncProgressWithLevels();
+      } else {
+        // モックデータサービス使用時
+        await _mockDataService.updateExampleCompletion(exampleId, isCompleted);
+        _levels = _mockDataService.levels;
+      }
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -230,8 +254,16 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> toggleFavorite(String exampleId) async {
     try {
-      await _mockDataService.toggleFavorite(exampleId);
-      _levels = _mockDataService.levels;
+      // Firebase認証使用時
+      if (_authProvider?.isAuthenticated == true) {
+        await _progressService.toggleFavorite(exampleId);
+        await _loadUserProgress();
+        await _syncProgressWithLevels();
+      } else {
+        // モックデータサービス使用時
+        await _mockDataService.toggleFavorite(exampleId);
+        _levels = _mockDataService.levels;
+      }
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -397,5 +429,111 @@ class AppProvider extends ChangeNotifier {
     });
 
     return categoriesWithRecentActivity;
+  }
+
+  /// Firebase進捗データを読み込み
+  Future<void> _loadUserProgress() async {
+    try {
+      _userProgress = await _progressService.getUserProgress();
+    } catch (e) {
+      print('Error loading user progress: $e');
+    }
+  }
+
+  /// Firebase進捗データとローカルのLevelデータを同期
+  Future<void> _syncProgressWithLevels() async {
+    if (_userProgress == null) return;
+
+    for (int i = 0; i < _levels.length; i++) {
+      final level = _levels[i];
+      final levelProgress = _userProgress!.levelProgress[level.id];
+      
+      List<Category> updatedCategories = [];
+      
+      for (int j = 0; j < level.categories.length; j++) {
+        final category = level.categories[j];
+        final categoryProgress = _userProgress!.categoryProgress[category.id];
+        
+        List<Example> updatedExamples = [];
+        
+        for (int k = 0; k < category.examples.length; k++) {
+          final example = category.examples[k];
+          final exampleProgress = _userProgress!.exampleProgress[example.id];
+          
+          updatedExamples.add(example.copyWith(
+            isCompleted: exampleProgress?.isCompleted ?? false,
+            isFavorite: exampleProgress?.isFavorite ?? false,
+            completedAt: exampleProgress?.completedAt,
+          ));
+        }
+        
+        final completedCount = updatedExamples.where((e) => e.isCompleted).length;
+        
+        updatedCategories.add(category.copyWith(
+          examples: updatedExamples,
+          completedExamples: completedCount,
+          totalExamples: updatedExamples.length,
+        ));
+      }
+      
+      final levelCompletedCount = updatedCategories
+          .fold<int>(0, (sum, cat) => sum + cat.completedExamples);
+      final levelTotalCount = updatedCategories
+          .fold<int>(0, (sum, cat) => sum + cat.totalExamples);
+      
+      _levels[i] = level.copyWith(
+        categories: updatedCategories,
+        completedExamples: levelCompletedCount,
+        totalExamples: levelTotalCount,
+      );
+    }
+  }
+
+  /// 進捗データ監視を開始
+  void startProgressWatch() {
+    if (_authProvider?.isAuthenticated == true) {
+      _progressService.watchUserProgress().listen((progress) {
+        _userProgress = progress;
+        if (progress != null) {
+          _syncProgressWithLevels();
+        }
+        notifyListeners();
+      });
+    }
+  }
+
+  /// カテゴリとレベルの進捗を更新
+  Future<void> updateCategoryAndLevelProgress(String categoryId, String levelId) async {
+    if (_authProvider?.isAuthenticated != true) return;
+
+    try {
+      final category = await getCategory(categoryId);
+      if (category != null) {
+        final completedExamples = category.examples.where((e) => e.isCompleted).length;
+        await _progressService.updateCategoryProgress(
+          categoryId: categoryId,
+          completedExamples: completedExamples,
+          totalExamples: category.examples.length,
+        );
+      }
+
+      final level = await getLevel(levelId);
+      if (level != null) {
+        final totalCompleted = level.categories.fold<int>(
+          0, (sum, cat) => sum + cat.examples.where((e) => e.isCompleted).length
+        );
+        final totalExamples = level.categories.fold<int>(
+          0, (sum, cat) => sum + cat.examples.length
+        );
+        
+        await _progressService.updateLevelProgress(
+          levelId: levelId,
+          completedExamples: totalCompleted,
+          totalExamples: totalExamples,
+        );
+      }
+    } catch (e) {
+      print('Error updating category/level progress: $e');
+    }
   }
 }

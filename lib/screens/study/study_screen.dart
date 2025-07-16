@@ -675,6 +675,14 @@ class _StudyScreenState extends State<StudyScreen> {
 
     await appProvider.updateExampleCompletion(example.id, isCompleted);
 
+    // カテゴリとレベルの進捗も更新
+    if (isCompleted) {
+      await appProvider.updateCategoryAndLevelProgress(
+        example.categoryId, 
+        example.levelId
+      );
+    }
+
     setState(() {
       _examples[_currentIndex] = example.copyWith(isCompleted: isCompleted);
     });

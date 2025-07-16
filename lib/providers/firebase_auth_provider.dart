@@ -4,6 +4,7 @@ import '../models/user.dart';
 import '../models/level.dart';
 import '../services/auth_service.dart';
 import '../services/mock_data_service.dart';
+import '../services/user_profile_service.dart';
 import 'dart:async';
 
 /// Firebase認証を使用するAppProvider
@@ -11,6 +12,7 @@ import 'dart:async';
 class FirebaseAuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final MockDataService _mockDataService = MockDataService();
+  final UserProfileService _profileService = UserProfileService();
 
   // ========== 状態変数 ==========
   User? _currentUser;
@@ -20,6 +22,9 @@ class FirebaseAuthProvider extends ChangeNotifier {
 
   // 認証状態監視用
   StreamSubscription<firebase.User?>? _authSubscription;
+  
+  // 認証状態変更コールバック
+  void Function()? _onAuthStateChanged;
 
   // ========== ゲッター ==========
   User? get currentUser => _currentUser;
@@ -34,6 +39,11 @@ class FirebaseAuthProvider extends ChangeNotifier {
   // ========== 初期化 ==========
   FirebaseAuthProvider() {
     _initializeServices();
+  }
+  
+  /// 認証状態変更時のコールバックを設定
+  void setOnAuthStateChanged(void Function()? callback) {
+    _onAuthStateChanged = callback;
   }
 
   Future<void> _initializeServices() async {
@@ -87,6 +97,9 @@ class FirebaseAuthProvider extends ChangeNotifier {
       }
 
       notifyListeners();
+      
+      // コールバックを呼び出し
+      _onAuthStateChanged?.call();
     } catch (e) {
       print('🔐 認証状態変更エラー: $e');
       _errorMessage = '認証状態の処理でエラーが発生しました: $e';
@@ -96,76 +109,35 @@ class FirebaseAuthProvider extends ChangeNotifier {
 
   Future<void> _createUserFromFirebaseUser(firebase.User firebaseUser) async {
     try {
-      // MockDataServiceからプロファイル情報を取得（既存データ）
-      Profile? profile;
-      try {
-        // ユーザーIDベースでプロファイルを読み込み
-        await _mockDataService.loadProfileFromStorage();
-        profile = _mockDataService.currentUser?.profile;
-
-        if (profile != null) {
-          print('🔐 既存プロファイル読み込み成功: isCompleted=${profile.isCompleted}');
-        } else {
-          print('🔐 プロファイルが見つかりません（既存ユーザーにデフォルトプロフィールを設定）');
-          // 既存ユーザーにデフォルトの完了済みプロフィールを設定
-          profile = Profile(
-            ageGroup: '30代',
-            occupation: '会社員',
-            englishLevel: '中級',
-            hobbies: ['映画・ドラマ', '読書'],
-            industry: 'IT・テクノロジー',
-            lifestyle: ['計画的'],
-            learningGoal: 'ビジネス英語',
-            familyStructure: '夫婦',
-            learningStyles: ['視覚的学習'],
-            isCompleted: true,
-          );
-          print('🔐 デフォルトプロフィール設定完了');
-        }
-      } catch (e) {
-        print('🔐 プロファイル読み込みエラー（新規ユーザーの可能性）: $e');
-      }
-
-      // 既存のdailyGoalを取得（保存されている場合）
-      int savedDailyGoal = 50; // デフォルト値
-      print('🔐 ========== USER CREATION DEBUG ==========');
-      print('🔐 デフォルトdailyGoal = $savedDailyGoal');
+      // Firebaseからプロファイル情報を取得
+      User? existingUser = await _profileService.getUserProfile();
       
-      try {
-        final existingUser = _mockDataService.currentUser;
-        print('🔐 existingUser = $existingUser');
-        print('🔐 existingUser?.dailyGoal = ${existingUser?.dailyGoal}');
+      if (existingUser != null) {
+        print('🔐 既存プロファイル読み込み成功: isCompleted=${existingUser.profile?.isCompleted}');
+        _currentUser = existingUser;
+      } else {
+        print('🔐 新規ユーザーまたはプロファイルが見つかりません');
         
-        if (existingUser != null) {
-          savedDailyGoal = existingUser.dailyGoal;
-          print('🔐 既存のdailyGoal取得: $savedDailyGoal');
-        } else {
-          print('🔐 既存ユーザーが見つかりません、デフォルト値を使用');
-        }
-      } catch (e) {
-        print('🔐 既存のdailyGoal取得エラー: $e');
+        // 新規ユーザーのUserオブジェクトを作成
+        _currentUser = User(
+          id: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          name: firebaseUser.displayName ?? firebaseUser.email?.split('@')[0] ?? '',
+          isAuthenticated: true,
+          createdAt: DateTime.now(),
+          dailyGoal: 10, // デフォルト値
+        );
+        
+        // Firebaseに新規ユーザーを保存
+        await _profileService.saveProfile(_currentUser!);
+        print('🔐 新規ユーザープロファイル保存完了');
       }
 
-      // アプリのUserオブジェクトを作成
-      _currentUser = User(
-        id: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        name:
-            firebaseUser.displayName ?? firebaseUser.email?.split('@')[0] ?? '',
-        isAuthenticated: true,
-        profile: profile,
-        dailyGoal: savedDailyGoal,
-      );
-      
-      print('🔐 作成されたユーザー: ${_currentUser}');
-      print('🔐 作成されたユーザーのdailyGoal: ${_currentUser?.dailyGoal}');
-      print('🔐 ====================================');
-
-      // MockDataServiceにもユーザーを設定（プロフィール保存のため）
+      // MockDataServiceにもユーザーを設定（学習データ用）
       _mockDataService.setCurrentUser(_currentUser!);
 
       print('🔐 ユーザーオブジェクト作成完了: ${_currentUser!.email}');
-      print('🔐 プロファイル状態: ${profile?.isCompleted == true ? "完了" : "未完了"}');
+      print('🔐 プロファイル状態: ${_currentUser!.profile?.isCompleted == true ? "完了" : "未完了"}');
     } catch (e) {
       print('🔐 ユーザーオブジェクト作成エラー: $e');
       throw Exception('ユーザー情報の作成に失敗しました: $e');
@@ -338,11 +310,14 @@ class FirebaseAuthProvider extends ChangeNotifier {
       print('🔐 プロファイル保存開始: isCompleted=${profile.isCompleted}');
       print('🔐 ユーザーID: ${_currentUser!.id}');
 
-      // MockDataServiceでプロファイルを保存
-      await _mockDataService.saveProfile(profile);
-
       // 現在のユーザーオブジェクトを更新
       _currentUser = _currentUser!.copyWith(profile: profile);
+
+      // Firebaseにプロファイルを保存
+      await _profileService.saveProfile(_currentUser!);
+
+      // MockDataServiceにも保存（学習データ用）
+      await _mockDataService.saveProfile(profile);
 
       // プロフィール保存後、初回ユーザーフラグをリセット
       _isFirstTimeUser = false;
@@ -379,9 +354,13 @@ class FirebaseAuthProvider extends ChangeNotifier {
       await _authService.updateDisplayName(name);
 
       // 現在のユーザーオブジェクトを更新（ニックネームとして保存）
-      _currentUser = _currentUser!.copyWith(name: name);
+      _currentUser = _currentUser!.copyWith(name: name, email: email);
+
+      // Firebaseにユーザー情報を保存
+      await _profileService.updateUserInfo(name: name, email: email);
 
       print('🔐 ユーザー情報更新成功（ニックネーム: $name）');
+      notifyListeners();
       return true;
     } catch (e) {
       print('🔐 ユーザー情報更新エラー: $e');
@@ -398,18 +377,29 @@ class FirebaseAuthProvider extends ChangeNotifier {
       _setLoading(true);
       _errorMessage = null;
 
+      if (_currentUser == null) {
+        throw Exception('ユーザーがログインしていません');
+      }
+
       print('🔐 ========== UPDATE DAILY GOAL ==========');
       print('🔐 Input dailyGoal = $dailyGoal');
       print('🔐 _currentUser?.dailyGoal (before) = ${_currentUser?.dailyGoal}');
       
+      // 現在のユーザーオブジェクトを更新
+      _currentUser = _currentUser!.copyWith(dailyGoal: dailyGoal);
+
+      // Firebaseに日次目標を保存
+      await _profileService.updateDailyGoal(dailyGoal);
+
+      // MockDataServiceにも保存（学習データ用）
       await _mockDataService.updateDailyGoal(dailyGoal);
-      _currentUser = _currentUser?.copyWith(dailyGoal: dailyGoal);
 
       print('🔐 _currentUser?.dailyGoal (after) = ${_currentUser?.dailyGoal}');
       print('🔐 MockDataService.currentUser?.dailyGoal = ${_mockDataService.currentUser?.dailyGoal}');
       print('🔐 日次目標更新成功: $dailyGoal');
       print('🔐 ======================================');
       
+      notifyListeners();
       return true;
     } catch (e) {
       print('🔐 日次目標更新エラー: $e');
@@ -444,7 +434,7 @@ class FirebaseAuthProvider extends ChangeNotifier {
 
   Future<List<Example>> getExamples(String categoryId) async {
     try {
-      return await _mockDataService.getPersonalizedExamples(categoryId);
+      return await _mockDataService.getExamples(categoryId);
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
