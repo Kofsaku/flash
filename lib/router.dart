@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'providers/app_provider.dart';
+import 'providers/firebase_auth_provider.dart';
 import 'models/user.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/auth/register_screen.dart';
-import 'screens/auth/register_profile_screen.dart';
 import 'screens/profile/profile_step1_screen.dart';
 import 'screens/profile/profile_step2_screen.dart';
 import 'screens/profile/profile_step3_screen.dart';
@@ -30,8 +28,7 @@ import 'widgets/main_layout.dart';
 class AppRouter {
   static const String splash = '/';
   static const String login = '/login';
-  static const String register = '/register';
-  static const String registerProfile = '/register/profile-setup';
+  static const String profileSetup = '/profile-setup';
   static const String profileStep1 = '/profile/step1';
   static const String profileStep2 = '/profile/step2';
   static const String profileStep3 = '/profile/step3';
@@ -65,14 +62,9 @@ class AppRouter {
           builder: (context, state) => const LoginScreen(),
         ),
         GoRoute(
-          path: register,
-          name: 'register',
-          builder: (context, state) => const RegisterScreen(),
-        ),
-        GoRoute(
-          path: registerProfile,
-          name: 'registerProfile',
-          builder: (context, state) => const RegisterProfileScreen(),
+          path: profileSetup,
+          name: 'profileSetup',
+          builder: (context, state) => const ProfileStep1Screen(),
         ),
         GoRoute(
           path: profileStep1,
@@ -196,13 +188,14 @@ class AppRouter {
         ),
       ],
       redirect: (BuildContext context, GoRouterState state) {
-        final appProvider = Provider.of<AppProvider>(context, listen: false);
-        final isAuthenticated = appProvider.isAuthenticated;
-        final profile = appProvider.currentUser?.profile;
+        final authProvider = Provider.of<FirebaseAuthProvider>(context, listen: false);
+        final isAuthenticated = authProvider.isAuthenticated;
+        final profile = authProvider.currentUser?.profile;
         final hasValidProfile = _hasValidProfile(profile);
+        final isFirstTimeUser = authProvider.isFirstTimeUser;
         
-        final isOnAuthPages = [login, register, registerProfile].contains(state.matchedLocation);
-        final isOnProfilePages = [profileStep1, profileStep2, profileStep3, profileStep4, profileStep5, quickStart].contains(state.matchedLocation);
+        final isOnAuthPages = [login].contains(state.matchedLocation);
+        final isOnProfilePages = [profileSetup, profileStep1, profileStep2, profileStep3, profileStep4, profileStep5, quickStart].contains(state.matchedLocation);
         final isOnSplash = state.matchedLocation == splash;
         final isOnError = state.matchedLocation == error;
 
@@ -218,9 +211,12 @@ class AppRouter {
           return login;
         }
 
-        // Only redirect to profile setup during registration flow
-        // Existing users should go directly to home
+        // 初回ユーザーまたはプロフィールが未設定の場合、プロフィール設定画面へ
+        if (isAuthenticated && (isFirstTimeUser || !hasValidProfile) && !isOnProfilePages) {
+          return profileSetup;
+        }
 
+        // 認証済みでプロフィールが設定済みの場合、認証ページやプロフィール設定ページからホームへ
         if (isAuthenticated && hasValidProfile && (isOnAuthPages || isOnProfilePages)) {
           return home;
         }

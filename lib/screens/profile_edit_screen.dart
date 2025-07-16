@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../providers/firebase_auth_provider.dart';
 import '../models/user.dart';
 
 class ProfileEditScreen extends StatefulWidget {
@@ -21,7 +22,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
   
   // User account data
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   List<String> _selectedHobbies = [];
   String? _selectedIndustry;
   List<String> _selectedLifestyle = [];
@@ -53,7 +53,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
   void dispose() {
     _tabController.dispose();
     _nameController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -65,7 +64,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
     // Load user account data
     if (user != null) {
       _nameController.text = user.name;
-      _emailController.text = user.email;
     }
     
     if (profile != null) {
@@ -97,10 +95,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     
     try {
-      // Update user info first
-      final userUpdateSuccess = await appProvider.updateUserInfo(
+      // Firebase認証では名前だけ更新可能
+      final authProvider = Provider.of<FirebaseAuthProvider>(context, listen: false);
+      final userUpdateSuccess = await authProvider.updateUserInfo(
         _nameController.text.trim(),
-        _emailController.text.trim(),
+        authProvider.currentUser?.email ?? '',
       );
       
       if (!userUpdateSuccess) {
@@ -130,7 +129,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
         motivationDetail: _motivationDetail,
       );
 
-      final profileUpdateSuccess = await appProvider.saveProfile(profile);
+      final profileUpdateSuccess = await authProvider.saveProfile(profile);
       
       if (!profileUpdateSuccess) {
         throw Exception('プロフィールの更新に失敗しました');
@@ -224,7 +223,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
           ),
           const SizedBox(height: 8),
           const Text(
-            'ユーザー名、メールアドレス、パスワードを変更できます',
+            'Googleアカウントでログインしています',
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 32),
@@ -249,43 +248,38 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
           const SizedBox(height: 24),
           const Text('メールアドレス', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              hintText: 'メールアドレスを入力してください',
-              prefixIcon: Icon(Icons.email),
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'メールアドレスを入力してください';
-              }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                return '有効なメールアドレスを入力してください';
-              }
-              return null;
+          Consumer<FirebaseAuthProvider>(
+            builder: (context, authProvider, _) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.email, color: Colors.grey),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        authProvider.currentUser?.email ?? 'メールアドレスが取得できません',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
-          
-          const SizedBox(height: 24),
-          const Text('パスワード', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: _showChangePasswordDialog,
-              icon: const Icon(Icons.lock),
-              label: const Text('パスワードを変更'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange[600],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+          const SizedBox(height: 8),
+          const Text(
+            'Googleアカウントのメールアドレスは変更できません',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           
           const SizedBox(height: 24),
@@ -337,7 +331,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '• メールアドレスを変更すると、次回ログイン時に新しいメールアドレスが必要になります\n• パスワードは6文字以上で設定してください\n• 変更を保存するには画面上部の「保存」ボタンを押してください',
+                  '• Googleアカウントでログインしているため、メールアドレスの変更はGoogleアカウント設定から行ってください\n• 名前の変更を保存するには画面上部の「保存」ボタンを押してください',
                   style: TextStyle(fontSize: 12),
                 ),
               ],
@@ -348,162 +342,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> with SingleTicker
     );
   }
 
-  void _showChangePasswordDialog() {
-    final currentPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-    bool isCurrentObscure = true;
-    bool isNewObscure = true;
-    bool isConfirmObscure = true;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('パスワード変更'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: currentPasswordController,
-                      obscureText: isCurrentObscure,
-                      decoration: InputDecoration(
-                        labelText: '現在のパスワード',
-                        prefixIcon: const Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            isCurrentObscure ? Icons.visibility : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              isCurrentObscure = !isCurrentObscure;
-                            });
-                          },
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: newPasswordController,
-                      obscureText: isNewObscure,
-                      decoration: InputDecoration(
-                        labelText: '新しいパスワード',
-                        prefixIcon: const Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            isNewObscure ? Icons.visibility : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              isNewObscure = !isNewObscure;
-                            });
-                          },
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: confirmPasswordController,
-                      obscureText: isConfirmObscure,
-                      decoration: InputDecoration(
-                        labelText: 'パスワード確認',
-                        prefixIcon: const Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            isConfirmObscure ? Icons.visibility : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              isConfirmObscure = !isConfirmObscure;
-                            });
-                          },
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    currentPasswordController.dispose();
-                    newPasswordController.dispose();
-                    confirmPasswordController.dispose();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('キャンセル'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (_validatePasswordChange(
-                      currentPasswordController.text,
-                      newPasswordController.text,
-                      confirmPasswordController.text,
-                    )) {
-                      await _changePassword(newPasswordController.text);
-                      currentPasswordController.dispose();
-                      newPasswordController.dispose();
-                      confirmPasswordController.dispose();
-                      // ignore: use_build_context_synchronously
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('変更'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  bool _validatePasswordChange(String current, String newPassword, String confirm) {
-    if (current.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('現在のパスワードを入力してください')),
-      );
-      return false;
-    }
-    
-    if (newPassword.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('新しいパスワードは6文字以上で入力してください')),
-      );
-      return false;
-    }
-    
-    if (newPassword != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('パスワードが一致しません')),
-      );
-      return false;
-    }
-    
-    return true;
-  }
-
-  Future<void> _changePassword(String newPassword) async {
-    // In a real app, you would validate the current password and update it
-    // For now, just show a success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('パスワードを変更しました（デモ機能）'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
 
   Widget _buildBasicInfoTab() {
     return SingleChildScrollView(

@@ -22,14 +22,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initialize() async {
     try {
+      // アプリ初期化処理
       final appProvider = Provider.of<AppProvider>(context, listen: false);
       await appProvider.initialize();
-      
       await Future.delayed(const Duration(seconds: 2));
       
       if (mounted) {
-        // ダミーデータなので常にログイン画面に遷移
-        context.go(AppRouter.login);
+        // 認証状態に応じて自動的にrouter.dartでリダイレクトされる
+        context.go(AppRouter.home);
       }
     } catch (e) {
       if (mounted) {

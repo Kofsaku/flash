@@ -2,20 +2,27 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/level.dart';
 import '../services/mock_data_service.dart';
+import 'firebase_auth_provider.dart';
 
 class AppProvider extends ChangeNotifier {
   final MockDataService _mockDataService = MockDataService();
+  FirebaseAuthProvider? _authProvider;
   
   User? _currentUser;
   List<Level> _levels = [];
   bool _isLoading = false;
   String? _errorMessage;
   
-  User? get currentUser => _currentUser;
+  User? get currentUser => _authProvider?.currentUser ?? _currentUser;
   List<Level> get levels => _levels;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _currentUser?.isAuthenticated ?? false;
+  bool get isAuthenticated => _authProvider?.isAuthenticated ?? (_currentUser?.isAuthenticated ?? false);
+
+  void setAuthProvider(FirebaseAuthProvider authProvider) {
+    _authProvider = authProvider;
+    notifyListeners();
+  }
 
   Future<void> initialize() async {
     try {
@@ -34,6 +41,8 @@ class AppProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       _currentUser = await _mockDataService.login(email, password);
+      // ログイン後、プロフィールが設定されている場合はパーソナライズされた例文数を反映
+      _levels = await _mockDataService.getLevels();
       _errorMessage = null;
       notifyListeners();
       return true;
@@ -67,6 +76,8 @@ class AppProvider extends ChangeNotifier {
     try {
       await _mockDataService.saveProfile(profile);
       _currentUser = _mockDataService.currentUser;
+      // プロフィール保存後、パーソナライズされた例文数を反映するためレベル情報を再読み込み
+      _levels = await _mockDataService.getLevels();
       _errorMessage = null;
       notifyListeners();
       return true;

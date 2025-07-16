@@ -109,7 +109,35 @@ class MockDataService {
   }
 
   Future<List<Level>> getLevels() async {
+    print('MockDataService: Getting all levels for home screen');
     await Future.delayed(const Duration(milliseconds: 300));
+    
+    // パーソナライズ例文を考慮した例文数に更新
+    if (_currentUser?.profile != null) {
+      List<Level> updatedLevels = [];
+      for (Level level in _levels) {
+        List<Category> updatedCategories = level.categories.map((category) {
+          int personalizedCount = _getPersonalizedExampleCount(category.id);
+          return category.copyWith(
+            totalExamples: category.totalExamples + personalizedCount,
+          );
+        }).toList();
+        
+        int totalExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.totalExamples);
+        int completedExamples = updatedCategories.fold(0, (sum, cat) => sum + cat.completedExamples);
+        
+        Level updatedLevel = level.copyWith(
+          categories: updatedCategories,
+          totalExamples: totalExamples,
+          completedExamples: completedExamples,
+        );
+        updatedLevels.add(updatedLevel);
+      }
+      
+      print('MockDataService: Updated all levels with personalized counts');
+      return updatedLevels;
+    }
+    
     return _levels;
   }
 

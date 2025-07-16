@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'providers/firebase_auth_provider.dart';
 import 'providers/app_provider.dart';
 import 'router.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Firebase 初期化
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
   runApp(const FlashCompositionApp());
 }
 
@@ -28,6 +38,7 @@ class _FlashCompositionAppState extends State<FlashCompositionApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (context) => FirebaseAuthProvider()),
         ChangeNotifierProvider(create: (context) => AppProvider()),
       ],
       child: MaterialApp.router(
