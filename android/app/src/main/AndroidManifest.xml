@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="flash_composition_app"
+        android:label="Flash for beginners"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -13,7 +13,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
-  bool _isSignUp = false; // 会員登録モードかどうか
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
@@ -44,11 +43,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleTestLogin() async {
+  Future<void> _handleGuestLogin() async {
     setState(() => _isLoading = true);
 
     try {
-      // シミュレーター用のテストログイン
+      // ゲストログイン
       final authProvider = Provider.of<FirebaseAuthProvider>(
         context,
         listen: false,
@@ -62,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('テストログインエラー: $e'),
+            content: Text('ゲストログインエラー: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -88,122 +87,116 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(Icons.flash_on, size: 80, color: Colors.blue[600]),
                     const SizedBox(height: 16),
                     Text(
-                      '瞬間英作文',
+                      'Flash for beginners',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.blue[600],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isSignUp ? '会員登録' : 'ログイン',
-                      style: TextStyle(fontSize: 20, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 60),
 
                     // Googleサインインボタン
-                    SizedBox(
+                    Container(
                       width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton.icon(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
                         onPressed:
                             (_isLoading || appProvider.isLoading)
                                 ? null
                                 : _handleGoogleSignIn,
-                        icon: Icon(
-                          Icons.g_mobiledata,
-                          size: 24,
-                          color:
-                              (_isLoading || appProvider.isLoading)
-                                  ? Colors.grey
-                                  : Colors.red[600],
-                        ),
-                        label: Text(
-                          _isSignUp ? 'Googleで会員登録' : 'Googleでサインイン',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color:
-                                (_isLoading || appProvider.isLoading)
-                                    ? Colors.grey
-                                    : Colors.red[600],
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color:
-                                (_isLoading || appProvider.isLoading)
-                                    ? Colors.grey
-                                    : Colors.red[600]!,
-                          ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Text(
-                      _isSignUp
-                          ? 'Googleアカウントで会員登録してください'
-                          : 'Googleアカウントでサインインしてください',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 会員登録/ログイン切り替え
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _isSignUp ? 'すでにアカウントをお持ちですか？' : 'アカウントをお持ちでないですか？',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _isSignUp = !_isSignUp;
-                            });
-                          },
-                          child: Text(
-                            _isSignUp ? 'ログイン' : '会員登録',
-                            style: TextStyle(
-                              color: Colors.blue[600],
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-
-                    // デバッグ用のテストログイン（開発時のみ）
-                    if (const bool.fromEnvironment('dart.vm.product') ==
-                        false) ...[
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      Text(
-                        'デバッグ用（開発時のみ）',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleTestLogin,
-                          child: const Text('テストログイン'),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(
+                                Icons.g_mobiledata,
+                                size: 20,
+                                color: Colors.red[600],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Googleでログイン',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
+
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [Colors.blue.shade400, Colors.blue.shade600],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _handleGuestLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.person_outline,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'ゲストとして試す',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

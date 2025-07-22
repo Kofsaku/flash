@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('瞬間英作文'),
+        title: const Text('Flash for beginners'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: Builder(

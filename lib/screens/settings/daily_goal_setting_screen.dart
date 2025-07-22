@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/firebase_auth_provider.dart';
 import '../../widgets/app_drawer.dart';
@@ -19,10 +20,21 @@ class _DailyGoalSettingScreenState extends State<DailyGoalSettingScreen> {
   void initState() {
     super.initState();
     // 現在の設定値を読み込み
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = Provider.of<FirebaseAuthProvider>(context, listen: false);
       final appProvider = Provider.of<AppProvider>(context, listen: false);
-      final currentGoal = authProvider.currentUser?.dailyGoal ?? 50;
+      
+      int currentGoal = 50; // デフォルト値
+      
+      // ログインしている場合はユーザーの設定値を使用
+      if (authProvider.currentUser != null) {
+        currentGoal = authProvider.currentUser?.dailyGoal ?? 50;
+      } else {
+        // ログインしていない場合はローカルストレージから読み込み
+        final prefs = await SharedPreferences.getInstance();
+        currentGoal = prefs.getInt('local_daily_goal') ?? 50;
+        print('🎯 ローカルストレージから日次目標を読み込み: $currentGoal');
+      }
       
       // 詳細デバッグ
       print('🎯 ========== GOAL SETTING DEBUG ==========');

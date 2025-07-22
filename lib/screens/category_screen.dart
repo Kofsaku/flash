@@ -746,19 +746,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Color _getLevelColor(int order) {
     switch (order) {
       case 1:
-        return Colors.green;
+        return Colors.green[600]!;
       case 2:
-        return Colors.blue;
+        return Colors.blue[600]!;
       case 3:
-        return Colors.orange;
+        return Colors.orange[600]!;
       case 4:
-        return Colors.purple;
+        return Colors.purple[600]!;
       case 5:
-        return Colors.red;
+        return Colors.red[600]!;
       case 6:
-        return Colors.teal;
+        return Colors.teal[600]!;
+      case 7:
+        return Colors.indigo[600]!;
+      case 8:
+        return Colors.pink[600]!;
       default:
-        return Colors.grey;
+        return Colors.grey[600]!;
     }
   }
 }

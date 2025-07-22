@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const Icon(Icons.flash_on, size: 100, color: Colors.white),
             const SizedBox(height: 24),
             const Text(
-              '瞬間英作文',
+              'Flash for beginners',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -58,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Flash Composition',
+              '初心者向け英語学習',
               style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 48),
@@ -67,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'アプリを起動しています...',
+              'Now Loading...',
               style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
           ],

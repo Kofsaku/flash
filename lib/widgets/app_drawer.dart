@@ -298,6 +298,7 @@ class AppDrawer extends StatelessWidget {
                     context,
                     listen: false,
                   );
+                  // ログアウト処理を実行してから画面遷移
                   await authProvider.logout();
                   if (context.mounted) {
                     context.go(AppRouter.login);

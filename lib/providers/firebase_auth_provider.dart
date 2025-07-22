@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../models/level.dart';
 import '../services/auth_service.dart';
@@ -187,17 +188,18 @@ class FirebaseAuthProvider extends ChangeNotifier {
     }
   }
 
-  /// テストアカウントでサインイン（開発時のみ）
+  /// ゲストアカウントでサインイン
   Future<bool> signInWithTestAccount() async {
     try {
       _setLoading(true);
       _errorMessage = null;
 
-      // テスト用のダミーユーザーを作成
-      final testUser = User(
-        id: 'test_user_${DateTime.now().millisecondsSinceEpoch}',
-        email: 'test@example.com',
-        name: 'テストユーザー',
+      // ゲスト用のダミーユーザーを作成
+      final guestUser = User(
+        id: 'guest_user_${DateTime.now().millisecondsSinceEpoch}',
+        email: 'guest@example.com',
+        name: 'ゲストユーザー',
+        dailyGoal: 10, // デフォルトの日次目標を設定
         profile: Profile(
           englishLevel: 'beginner',
           learningGoal: 'conversation',
@@ -206,15 +208,18 @@ class FirebaseAuthProvider extends ChangeNotifier {
         isAuthenticated: true,
       );
 
-      _currentUser = testUser;
+      _currentUser = guestUser;
       _isFirstTimeUser = false;
 
-      print('🔐 テストログイン成功');
+      // MockDataServiceにもユーザーを設定
+      _mockDataService.setCurrentUser(guestUser);
+
+      print('🔐 ゲストログイン成功');
 
       notifyListeners();
       return true;
     } catch (e) {
-      print('🔐 テストログインエラー: $e');
+      print('🔐 ゲストログインエラー: $e');
       _errorMessage = e.toString();
       return false;
     } finally {
@@ -266,14 +271,21 @@ class FirebaseAuthProvider extends ChangeNotifier {
   /// サインアウト
   Future<void> logout() async {
     try {
-      _setLoading(true);
+      // ローディング状態は設定しない（画面遷移の妨げになるため）
+      
+      // ゲストユーザーの場合は状態を即座にクリア
+      if (_currentUser?.email == 'guest@example.com') {
+        print('🔐 ゲストユーザーのサインアウト');
+        _currentUser = null;
+        _mockDataService.setCurrentUser(null);
+        notifyListeners();
+      }
+      
       await _authService.signOut();
       print('🔐 サインアウト完了');
     } catch (e) {
       print('🔐 サインアウトエラー: $e');
       _errorMessage = e.toString();
-    } finally {
-      _setLoading(false);
     }
   }
 
@@ -313,8 +325,13 @@ class FirebaseAuthProvider extends ChangeNotifier {
       // 現在のユーザーオブジェクトを更新
       _currentUser = _currentUser!.copyWith(profile: profile);
 
-      // Firebaseにプロファイルを保存
-      await _profileService.saveProfile(_currentUser!);
+      // ゲストアカウントかどうかチェック
+      final isGuestAccount = _currentUser!.email == 'guest@example.com';
+      
+      if (!isGuestAccount) {
+        // Firebaseにプロファイルを保存（ゲストアカウント以外の場合のみ）
+        await _profileService.saveProfile(_currentUser!);
+      }
 
       // MockDataServiceにも保存（学習データ用）
       await _mockDataService.saveProfile(profile);
@@ -356,8 +373,13 @@ class FirebaseAuthProvider extends ChangeNotifier {
       // 現在のユーザーオブジェクトを更新（ニックネームとして保存）
       _currentUser = _currentUser!.copyWith(name: name, email: email);
 
-      // Firebaseにユーザー情報を保存
-      await _profileService.updateUserInfo(name: name, email: email);
+      // ゲストアカウントかどうかチェック
+      final isGuestAccount = _currentUser!.email == 'guest@example.com';
+      
+      if (!isGuestAccount) {
+        // Firebaseにユーザー情報を保存（ゲストアカウント以外の場合のみ）
+        await _profileService.updateUserInfo(name: name, email: email);
+      }
 
       print('🔐 ユーザー情報更新成功（ニックネーム: $name）');
       notifyListeners();
@@ -377,19 +399,31 @@ class FirebaseAuthProvider extends ChangeNotifier {
       _setLoading(true);
       _errorMessage = null;
 
-      if (_currentUser == null) {
-        throw Exception('ユーザーがログインしていません');
-      }
-
       print('🔐 ========== UPDATE DAILY GOAL ==========');
       print('🔐 Input dailyGoal = $dailyGoal');
       print('🔐 _currentUser?.dailyGoal (before) = ${_currentUser?.dailyGoal}');
       
+      // ログインしていない場合はローカルストレージに保存
+      if (_currentUser == null) {
+        print('🔐 ユーザー未ログイン: ローカルストレージに保存');
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('local_daily_goal', dailyGoal);
+        print('🔐 ローカルストレージに日次目標を保存: $dailyGoal');
+        print('🔐 ======================================');
+        notifyListeners();
+        return true;
+      }
+      
       // 現在のユーザーオブジェクトを更新
       _currentUser = _currentUser!.copyWith(dailyGoal: dailyGoal);
 
-      // Firebaseに日次目標を保存
-      await _profileService.updateDailyGoal(dailyGoal);
+      // ゲストアカウントかどうかチェック
+      final isGuestAccount = _currentUser!.email == 'guest@example.com';
+      
+      if (!isGuestAccount) {
+        // Firebaseに日次目標を保存（ゲストアカウント以外の場合のみ）
+        await _profileService.updateDailyGoal(dailyGoal);
+      }
 
       // MockDataServiceにも保存（学習データ用）
       await _mockDataService.updateDailyGoal(dailyGoal);

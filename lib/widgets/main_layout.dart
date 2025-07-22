@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../router.dart';
+import '../providers/app_provider.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget child;
@@ -39,8 +41,17 @@ class MainLayout extends StatelessWidget {
         context.go(AppRouter.home);
         break;
       case 1:
-        // Navigate to the first level's category screen (中学レベル)
-        context.go('${AppRouter.category}?levelId=junior_high');
+        // Navigate to the first level's category screen
+        final appProvider = Provider.of<AppProvider>(context, listen: false);
+        final firstLevel = appProvider.levels.isNotEmpty 
+            ? appProvider.levels.first 
+            : null;
+        if (firstLevel != null) {
+          context.go('${AppRouter.category}?levelId=${firstLevel.id}');
+        } else {
+          // Fallback to home if no levels available
+          context.go(AppRouter.home);
+        }
         break;
       case 2:
         context.go(AppRouter.favorites);

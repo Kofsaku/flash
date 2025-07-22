@@ -232,11 +232,6 @@ class AppRouter {
             return null;
           }
 
-          // 認証処理中の場合はスプラッシュ画面を表示（ただしプロフィール編集中は除く）
-          if (isLoading && !isOnProfileEdit) {
-            return splash;
-          }
-
           // 未認証の場合はログイン画面へ
           if (!isAuthenticated && !isOnAuthPages) {
             print('🔄 Redirecting to login: not authenticated');
@@ -258,9 +253,11 @@ class AppRouter {
           }
 
           return null;
-        } catch (e) {
+        } catch (e, stackTrace) {
           print('🔄 Router Error: $e');
-          return splash;
+          print('🔄 Stack trace: $stackTrace');
+          // エラー時は現在のページに留まる（スプラッシュにリダイレクトしない）
+          return null;
         }
       },
     );
